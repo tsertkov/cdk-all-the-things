@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { GoLambdaApiCdkStack } from '../lib/go-lambda-api-cdk-stack';
+import { CdkGoLambdasStack } from '../lib/cdk-go-lambdas-stack';
 
 const app = new cdk.App();
-new GoLambdaApiCdkStack(app, 'GoLambdaApiCdkStack', {
+new CdkGoLambdasStack(app, 'CdkGoLambdaStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */

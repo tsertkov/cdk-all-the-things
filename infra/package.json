@@ -1,8 +1,8 @@
 {
-  "name": "go-lambda-api-cdk",
+  "name": "cdk-go-lambdas",
   "version": "0.1.0",
   "bin": {
-    "go-lambda-api-cdk": "bin/go-lambda-api-cdk.js"
+    "cdk-go-lambdas": "bin/cdk-go-lambdas.js"
   },
   "scripts": {
     "build": "tsc",
