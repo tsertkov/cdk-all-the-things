@@ -1,4 +1,4 @@
-name: Reusable Deploy
+name: Deploy Stage
 
 on:
   workflow_call:
