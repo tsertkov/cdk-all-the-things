@@ -1,0 +1,60 @@
+name: Reusable Deploy
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        type: string
+        required: true
+      stage:
+        type: string
+        required: true
+      project:
+        type: string
+        required: true
+      region:
+        type: string
+        required: true
+      s3ArtifactsBucket:
+        type: string
+        required: true
+      ciRoleName:
+        type: string
+        required: true
+    secrets:
+      awsAccountId:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set outputs
+      id: vars
+      run: |
+        version=${GITHUB_SHA:0:7}
+        echo "::set-output name=version::$version"
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.awsAccountId }}:role/${{ inputs.ciRoleName }}
+        aws-region: ${{ inputs.region }}
+
+    - name: Upload deployment config to S3
+      run: |
+        echo ${{ steps.vars.outputs.version }} > ${{ inputs.stage }}
+        zip ${{ inputs.stage }}.zip ${{ inputs.stage }}
+        aws s3 cp ${{ inputs.stage }}.zip s3://${{ inputs.s3ArtifactsBucket }}
+
+    - name: Start pipeline
+      run: |
+        aws codepipeline start-pipeline-execution \
+          --name ${{ inputs.project }}-${{ inputs.app }}-${{ inputs.stage }}

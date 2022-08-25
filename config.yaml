@@ -1,0 +1,40 @@
+common:
+  project: CdkGoLambdas
+  removalPolicy: retain
+  logRetentionDays: 90
+  tracingEnabled: false
+  tags:
+    owner: Al
+
+stages:
+  prd:
+  std:
+  dev:
+    tracingEnabled: true
+    removalPolicy: destroy
+    logRetentionDays: 7
+
+be:
+  common:
+    apiResourceName: api
+    regions:
+      - eu-central-1
+      - us-east-1
+
+  stages:
+    dev:
+      regions:
+        - eu-central-1
+
+deployer:
+  common:
+    githubRepo: tsertkov/cdk-all-the-things
+    regions:
+      - eu-central-1
+
+monitor:
+  common:
+    hecEndpoint: https://aws-kinesis-http-intake.logs.datadoghq.eu/v1/input
+    hecToken:
+    regions:
+      - eu-central-1

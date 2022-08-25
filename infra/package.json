@@ -1,0 +1,30 @@
+{
+  "name": "infra",
+  "version": "0.1.0",
+  "bin": {
+    "be-app": "bin/be-app.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/jest": "^28.1.8",
+    "@types/node": "18.7.13",
+    "@types/prettier": "2.7.0",
+    "jest": "^28.1.3",
+    "ts-jest": "^28.0.8",
+    "ts-node": "^10.9.1",
+    "typescript": "~4.7.4"
+  },
+  "dependencies": {
+    "aws-cdk": "2.38.1",
+    "aws-cdk-lib": "2.38.1",
+    "constructs": "^10.1.86",
+    "deepmerge-ts": "^4.2.1",
+    "source-map-support": "^0.5.21",
+    "yaml": "^2.1.1"
+  }
+}
