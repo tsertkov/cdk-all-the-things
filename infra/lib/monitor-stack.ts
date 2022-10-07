@@ -1,11 +1,12 @@
 import { Construct } from 'constructs'
-import { Fn } from 'aws-cdk-lib'
+import { Aws } from 'aws-cdk-lib'
 import { CfnSubscriptionFilter } from 'aws-cdk-lib/aws-logs'
 import { PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
 import { NestedStackBase, NestedStackBaseProps } from './nested-stack-base'
 
 interface MonitorStackProps extends NestedStackBaseProps {
   logGroupNames: Record<string, string>
+  monitorRegion: string
 }
 
 export class MonitorStack extends NestedStackBase {
@@ -15,7 +16,9 @@ export class MonitorStack extends NestedStackBase {
   constructor(scope: Construct, id: string, props: MonitorStackProps) {
     super(scope, id, props)
     this.logGroupNames = props.logGroupNames
-    this.logDeliveryStreamArn = Fn.importValue([ this.config.project, 'monitor', 'LogDeliveryStreamArn', ].join('-'))
+    this.logDeliveryStreamArn = `arn:${this.partition}:firehose:`
+      + `${props.monitorRegion}:${Aws.ACCOUNT_ID}:deliverystream/`
+      + `${this.config.project}-${this.config.stageName}-monitor-LogDeliveryStream`
     this.initLogSubscriptions()
   }
 

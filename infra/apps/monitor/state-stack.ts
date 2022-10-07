@@ -8,20 +8,20 @@ export interface StateStackProps extends NestedStackBaseProps {
 }
 
 export class StateStack extends NestedStackBase {
-  logDeliveryBackupBucket: Bucket
+  logsBucket: Bucket
   logDeliveryLogGroup: LogGroup
   resourceGroup: CfnGroup
 
   constructor(scope: Construct, id: string, props: StateStackProps) {
     super(scope, id, props)
     this.initResourceGroup()
-    this.initLogDeliveryBackupBucket()
+    this.initLogsBucket()
     this.initLogDeliveryLogGroup()
   }
 
   private initResourceGroup () {
     this.resourceGroup = new CfnGroup(this, 'ResourceGroup', {
-      name: this.config.project,
+      name: `${this.config.project}-${this.config.stageName}`,
       resourceQuery: {
         type: 'TAG_FILTERS_1_0',
         query: {
@@ -34,8 +34,8 @@ export class StateStack extends NestedStackBase {
     })
   }
 
-  private initLogDeliveryBackupBucket () {
-    this.logDeliveryBackupBucket = new Bucket(this, 'LogDeliveryBackupBucket', {
+  private initLogsBucket () {
+    this.logsBucket = new Bucket(this, 'LogsBucket', {
       removalPolicy: this.config.removalPolicy,
     })
   }

@@ -1,5 +1,5 @@
 common:
-  project: CdkGoLambdas
+  project: CdkATT
   removalPolicy: retain
   logRetentionDays: 90
   tracingEnabled: false
@@ -8,7 +8,7 @@ common:
 
 stages:
   prd:
-  std:
+  stg:
   dev:
     tracingEnabled: true
     removalPolicy: destroy
@@ -17,10 +17,10 @@ stages:
 be:
   common:
     apiResourceName: api
+    monitorRegion: eu-central-1
     regions:
       - eu-central-1
       - us-east-1
-
   stages:
     dev:
       regions:
@@ -28,13 +28,19 @@ be:
 
 deployer:
   common:
-    githubRepo: tsertkov/cdk-all-the-things
+    githubRepo: tsertkov/cdk-all-the-things-pivate
+    githubOidcArnCfnOutput: GithubOidcArn
     regions:
       - eu-central-1
+  stages:
+    dev:
+      noApprovalDeploy: true
+    stg:
+      promotionSrc: dev
+    prd:
+      promotionSrc: stg
 
 monitor:
   common:
-    hecEndpoint: https://aws-kinesis-http-intake.logs.datadoghq.eu/v1/input
-    hecToken:
     regions:
       - eu-central-1

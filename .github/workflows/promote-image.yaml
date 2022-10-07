@@ -1,0 +1,62 @@
+name: Promote image
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+      src_stage:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Set outputs
+      id: vars
+      run: |
+        src_ecr_repo=${{ secrets.project }}-${{ inputs.src_stage }}-${{ inputs.name }}
+        dst_ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
+        echo "::set-output name=src_ecr_repo::${src_ecr_repo,,}"
+        echo "::set-output name=dst_ecr_repo::${dst_ecr_repo,,}"
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ${{ secrets.aws_global_region }}
+        role-session-name: ${{ secrets.project }}-${{ secrets.stage }}-promote
+        role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ secrets.aws_ci_role_name }}
+        role-duration-seconds: 3600
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Pull container image from src stage
+      id: pull-image
+      run: |
+        image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.src_ecr_repo }}:${{ inputs.version }}
+        docker pull $image
+        echo "::set-output name=src_image::$image"
+
+    - name: Push container image to dst stage
+      id: push-image
+      run: |
+        image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.dst_ecr_repo }}:${{ inputs.version }}
+        docker tag ${{ steps.pull-image.outputs.src_image }} $image
+        docker push $image
+        echo "::set-output name=dst_image::$image"

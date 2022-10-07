@@ -1,0 +1,56 @@
+name: Continuous Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        required: true
+  push:
+    branches:
+      - master
+      - release/*
+
+jobs:
+  version:
+    uses: ./.github/workflows/gitversion.yaml
+
+  deployer-image:
+    needs: version
+    uses: ./.github/workflows/build-and-publish.yaml
+    with:
+      name: deployer
+      environment: ${{ inputs.environment || 'dev' }}
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  deployer:
+    needs: deployer-image
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: deployer
+      environment: ${{ inputs.environment || 'dev' }}
+      version: ${{ needs.deployer-image.outputs.version }}
+    secrets: inherit
+
+  monitor:
+    needs:
+      - deployer-image
+      - deployer
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: monitor
+      environment: ${{ inputs.environment || 'dev' }}
+      version: ${{ needs.deployer-image.outputs.version }}
+    secrets: inherit
+
+  be:
+    needs:
+      - deployer-image
+      - monitor
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: be
+      environment: ${{ inputs.environment || 'dev' }}
+      version: ${{ needs.deployer-image.outputs.version }}
+    secrets: inherit

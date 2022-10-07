@@ -31,21 +31,17 @@ export class LogStack extends NestedStackBase {
       assumedBy: new ServicePrincipal('firehose.amazonaws.com'),
     })
 
-    this.stateStack.logDeliveryBackupBucket.grantReadWrite(this.firehoseRole)
+    this.stateStack.logsBucket.grantReadWrite(this.firehoseRole)
     this.stateStack.logDeliveryLogGroup.grantWrite(this.firehoseRole)
   }
 
   private initDeliveryStream () {
     const deliveryStreamName = [
       this.config.project,
+      this.config.stageName,
       this.config.appName,
       'LogDeliveryStream',
     ].join('-')
-
-    const logDeliveryBackupLogStream = new LogStream(this, 'LogDeliveryBackup', {
-      logGroup: this.stateStack.logDeliveryLogGroup,
-      removalPolicy: this.config.removalPolicy,
-    })
 
     const logDeliveryLogStream = new LogStream(this, 'LogDelivery', {
       logGroup: this.stateStack.logDeliveryLogGroup,
@@ -54,27 +50,13 @@ export class LogStack extends NestedStackBase {
 
     this.deliveryStream = new CfnDeliveryStream(this, 'DeliveryStream', {
       deliveryStreamName,
-      deliveryStreamType: 'DirectPut',
-      httpEndpointDestinationConfiguration: {
+      s3DestinationConfiguration: {
         roleArn: this.firehoseRole.roleArn,
-        endpointConfiguration: {
-          url: this.config.hecEndpoint,
-          accessKey: this.config.hecToken,
-        },
+        bucketArn: this.stateStack.logsBucket.bucketArn,
         cloudWatchLoggingOptions: {
           enabled: true,
           logGroupName: this.stateStack.logDeliveryLogGroup.logGroupName,
           logStreamName: logDeliveryLogStream.logStreamName,
-        },
-        s3BackupMode: 'FailedDataOnly',
-        s3Configuration: {
-          bucketArn: this.stateStack.logDeliveryBackupBucket.bucketArn,
-          roleArn: this.firehoseRole.roleArn,
-          cloudWatchLoggingOptions: {
-            enabled: true,
-            logGroupName: this.stateStack.logDeliveryLogGroup.logGroupName,
-            logStreamName: logDeliveryBackupLogStream.logStreamName,
-          },
         },
       },
     })

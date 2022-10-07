@@ -27,6 +27,6 @@ describe('deployer', () => {
 
   test('contains nested stacks', () => {
     const nestedStacks = tpl.findResources('AWS::CloudFormation::Stack')
-    expect(Object.keys(nestedStacks).length).toBe(3)
+    expect(Object.keys(nestedStacks).length).toBe(2)
   })
 })

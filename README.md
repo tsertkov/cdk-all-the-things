@@ -1,4 +1,4 @@
-# cdk-go-lambdas
+# CDK All The Things
 
 Multi-region, multi-environment AWS CDK and Golang cloud application playground.
 
@@ -14,19 +14,8 @@ Multi-region, multi-environment AWS CDK and Golang cloud application playground.
 ## Usage
 
 1) Clone `git` repo
-2) Install dependencies
+2) Install dependencies by running `make init`
 3) Run tasks with `make`
-
-```bash
-# clone git repo
-git clone https://github.com/tsertkov/cdk-go-lambdas.git
-
-# install dependencies
-make init
-
-# run default task
-make
-```
 
 Build commands:
 
@@ -39,10 +28,13 @@ Build commands:
 
 CDK commands:
 
-- `make lsal` - list all stacks for all apps
-- `make ls` - list infra stacks
+- `make ls` - list infra stacks for given region
+- `make lsa` - list infra stacks for all regions
+- `make lsa-all` - list all stacks for all apps
 - `make diff` - diff infra changes
 - `make deploy` - deploy infra & lambdas
+- `make outputs` - display stack outputs
+- `make outputs-all` - display stack outputs from all apps for given region
 - `make destroy` - destroy stacks
 - `make app=be lsa` - list all stacks for be app
 

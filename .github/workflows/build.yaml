@@ -2,62 +2,13 @@ name: Build
 
 on:
   push:
-    branches:
+    branches-ignore:
       - master
-  pull_request:
-    branches:
-      - master
-
-env:
-  DEPLOYER_REGION: eu-central-1
-  ECR_REPOSITORY: cdkgolambdas-dev-deployer
-  CI_ROLE_NAME: CdkGoLambdas-dev-euc1-deployer-Stat-CiRole5A6E8228-DBYWGBRV50Z4
+      - release/*
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set outputs
-      id: vars
-      run: |
-        version=${GITHUB_SHA:0:7}
-        echo "::set-output name=version::$version"
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.CI_ROLE_NAME }}
-        aws-region: ${{ env.DEPLOYER_REGION }}
-
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Build deployer image
-      id: build-image
-      run: |
-        make ci
-        image=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ steps.vars.outputs.version }}
-        docker tag infra $image
-        echo "::set-output name=image::$image"
-
-    - name: Upload image to ECR
-      run: |
-        docker push ${{ steps.build-image.outputs.image }}
-        echo ${{ steps.vars.outputs.version }} > image-version.txt
-        echo ${{ steps.build-image.outputs.image }} > image-uri.txt
-
-    - uses: actions/upload-artifact@v3
-      with:
-        name: image-artifact
-        if-no-files-found: error
-        path: |
-          image-version.txt
-          image-uri.txt
+    - run: make ci

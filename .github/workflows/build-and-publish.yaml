@@ -1,0 +1,60 @@
+name: Build and publish
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+    outputs:
+      version:
+        value: ${{ inputs.version }}
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set outputs
+      id: vars
+      run: |
+        ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
+        ecr_repo=${ecr_repo,,}
+        echo "::set-output name=ecr_repo::$ecr_repo"
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ${{ secrets.aws_global_region }}
+        role-session-name: ${{ steps.vars.outputs.ecr_repo }}
+        role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ secrets.aws_ci_role_name }}
+        role-duration-seconds: 3600
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build infra deployer image
+      id: build-image
+      run: |
+        make ci
+        image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.ecr_repo }}:${{ inputs.version }}
+        docker tag infra $image
+        echo "::set-output name=image::$image"
+
+    - name: Upload image to ECR
+      run: |
+        docker push ${{ steps.build-image.outputs.image }}

@@ -6,55 +6,110 @@ on:
       app:
         type: string
         required: true
-      stage:
+      environment:
         type: string
         required: true
-      project:
+      version:
         type: string
         required: true
-      region:
-        type: string
-        required: true
-      s3ArtifactsBucket:
-        type: string
-        required: true
-      ciRoleName:
-        type: string
-        required: true
-    secrets:
-      awsAccountId:
-        required: true
+
+concurrency:
+  group: ${{ inputs.environment }}-${{ inputs.app }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
 
     permissions:
       id-token: write
       contents: read
 
     steps:
-    - uses: actions/checkout@v3
-
     - name: Set outputs
       id: vars
       run: |
-        version=${GITHUB_SHA:0:7}
-        echo "::set-output name=version::$version"
+        pipelineName=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.app }}
+        echo "::set-output name=pipelineName::$pipelineName"
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        role-to-assume: arn:aws:iam::${{ secrets.awsAccountId }}:role/${{ inputs.ciRoleName }}
-        aws-region: ${{ inputs.region }}
+        aws-region: ${{ secrets.aws_global_region }}
+        role-session-name: deploy-stage-${{ secrets.stage }}
+        role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ secrets.aws_ci_role_name }}
+        role-duration-seconds: 3600
 
-    - name: Upload deployment config to S3
+    - name: Upload deployment artifact to S3
+      id: artifact
       run: |
-        echo ${{ steps.vars.outputs.version }} > ${{ inputs.stage }}
-        zip ${{ inputs.stage }}.zip ${{ inputs.stage }}
-        aws s3 cp ${{ inputs.stage }}.zip s3://${{ inputs.s3ArtifactsBucket }}
+        echo ${{ inputs.version }} > ${{ inputs.app }}
+        zip ${{ inputs.app }}.zip ${{ inputs.app }}
+        revision=$(aws s3api put-object \
+          --body ${{ inputs.app }}.zip \
+          --key ${{ inputs.app }}.zip \
+          --bucket ${{ secrets.aws_artifacts_bucket }} \
+          --query VersionId \
+          --output text)
+        echo "Artifact revision: $revision"
+        echo "::set-output name=revision::$revision"
 
     - name: Start pipeline
+      id: pipeline
       run: |
-        aws codepipeline start-pipeline-execution \
-          --name ${{ inputs.project }}-${{ inputs.app }}-${{ inputs.stage }}
+        executionId=$(aws codepipeline start-pipeline-execution \
+          --name ${{ steps.vars.outputs.pipelineName }} \
+          --query pipelineExecutionId --output text)
+
+        echo "Started pipeline: ${{ steps.vars.outputs.pipelineName }} executionId: ${executionId}"
+        echo "::set-output name=executionId::$executionId"
+
+    - name: Validate pipeline execution source
+      run: |
+        sleep 5
+        revision=$(aws codepipeline get-pipeline-execution \
+          --pipeline-name ${{ steps.vars.outputs.pipelineName }} \
+          --pipeline-execution-id ${{ steps.pipeline.outputs.executionId }} \
+          --query 'pipelineExecution.artifactRevisions[0].revisionId' \
+          --output text)
+
+        echo "Pipeline execution source artifact revision: $revision, expected: ${{ steps.artifact.outputs.revision }}"
+
+        if [ "$revision" != "${{ steps.artifact.outputs.revision }}" ]; then
+          echo "Stopping pipeline execution"
+          aws codepipeline stop-pipeline-execution \
+            --pipeline-name ${{ steps.vars.outputs.pipelineName }} \
+            --pipeline-execution-id ${{ steps.pipeline.outputs.executionId }} \
+            --query pipelineExecutionId --output text \
+            --reason "Unexpected source artifact revision id"
+          exit 1
+        fi
+
+    - name: Monitor pipeline execution
+      run: |
+        while true; do
+          echo -n "pipeline execution status: "
+          status=$(aws codepipeline get-pipeline-execution \
+            --pipeline-name ${{ steps.vars.outputs.pipelineName }} \
+            --pipeline-execution-id ${{ steps.pipeline.outputs.executionId }} \
+            --query pipelineExecution.status --output text)
+
+          echo -n $status
+          if [ "$status" = "InProgress" -o "$status" = "Stopping" ]; then
+            echo "; sleeping 5s..."
+            sleep 5
+            continue
+          fi
+
+          [ "$status" = "Succeeded" ]
+          exit $?
+        done
+
+    - name: Stop pipeline execution
+      if: ${{ cancelled() }}
+      run: |
+        aws codepipeline stop-pipeline-execution \
+          --pipeline-name ${{ steps.vars.outputs.pipelineName }} \
+          --pipeline-execution-id ${{ steps.pipeline.outputs.executionId }} \
+          --reason "Unexpected source artifact revision id" || true

@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  version:
+    uses: ./.github/workflows/gitversion.yaml
+
+  dev-to-stg:
+    needs: version
+    uses: ./.github/workflows/promote-image.yaml
+    with:
+      name: deployer
+      version: ${{ needs.version.outputs.version }}
+      src_stage: dev
+      environment: stg
+    secrets: inherit
+
+  stg-deployer:
+    needs:
+      - version
+      - dev-to-stg
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: deployer
+      environment: stg
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  stg-monitor:
+    needs:
+      - version
+      - stg-deployer
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: monitor
+      environment: stg
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  stg-be:
+    needs:
+      - version
+      - stg-monitor
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: be
+      environment: stg
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  stg-to-prd:
+    needs:
+      - version
+      - stg-be
+      - stg-monitor
+      - stg-deployer
+    uses: ./.github/workflows/promote-image.yaml
+    with:
+      name: deployer
+      version: ${{ needs.version.outputs.version }}
+      src_stage: stg
+      environment: prd
+    secrets: inherit
+
+  prd-deployer:
+    needs:
+      - version
+      - stg-to-prd
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: deployer
+      environment: prd
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  prd-monitor:
+    needs:
+      - version
+      - prd-deployer
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: monitor
+      environment: prd
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  prd-be:
+    needs:
+      - version
+      - prd-monitor
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: be
+      environment: prd
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit

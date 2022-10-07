@@ -20,10 +20,10 @@ key_file := key.txt
 
 # tasks
 
-all: lsall
+all: lsa-all
 
-PHONY: lsal lsall
-lsal lsall:
+PHONY: lsa-all
+lsa-all:
 	@echo % make app=deployer lsa
 	@$(MAKE) -s app=deployer lsa
 	@echo % make app=be lsa
@@ -56,11 +56,20 @@ $(key_file):
 	@aws secretsmanager describe-secret --secret-id $(project)/$(secret_name) > /dev/null
 	@aws secretsmanager get-secret-value --secret-id $(project)/$(secret_name) --query SecretString --output text > $(key_file)
 
+.PHONY: secrets.yaml
 secrets.yaml: $(key_file)
 	@SOPS_AGE_KEY_FILE=$(key_file) sops -d secrets.sops.yaml > secrets.yaml
 
 .PHONY: secrets
 secrets: secrets.yaml
+
+.PHONY: secrets-aws-update
+secrets-aws-update:
+	@./infra/scripts/aws-secrets.sh update $(stage) $(app)
+
+.PHONY: secrets-aws-remove
+secrets-aws-delete:
+	@./infra/scripts/aws-secrets.sh delete $(stage) $(app)
 
 .PHONY: sops
 sops: $(key_file)
@@ -81,7 +90,28 @@ diff: secrets
 .PHONY: deploy
 deploy: secrets
 	@$(infra_cmd) deploy $(stacks)
+	@$(MAKE) -s secrets-aws-update
 
 .PHONY: destroy
 destroy:
 	@$(infra_cmd) destroy $(stacks)
+
+.PHONY: metadata
+metadata:
+	@$(infra_cmd) metadata $(stacks)
+
+.PHONY: outputs-all
+outputs-all:
+	@echo % make app=deployer outputs
+	@$(MAKE) -s app=deployer outputs
+	@echo % make app=monitor outputs
+	@$(MAKE) -s app=monitor outputs
+	@echo % make app=be outputs
+	@$(MAKE) -s app=be outputs
+
+.PHONY: outputs
+outputs:
+	@for stack in $(shell $(infra_cmd) ls $(stacks) 2>/dev/null); do \
+		echo $$stack:; \
+		./infra/scripts/stack-outputs.sh $$stack; \
+	done

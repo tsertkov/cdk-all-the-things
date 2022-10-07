@@ -6,7 +6,7 @@ import { DeployerStageProps } from './deployer-config'
 import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline'
 import { BuildSpec, LinuxBuildImage, PipelineProject } from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
-import { CodeBuildAction, ManualApprovalAction, S3SourceAction, S3Trigger } from 'aws-cdk-lib/aws-codepipeline-actions'
+import { Action, CodeBuildAction, ManualApprovalAction, S3SourceAction, S3Trigger } from 'aws-cdk-lib/aws-codepipeline-actions'
 import { regionToCode } from '../../lib/utils'
 
 export interface DeployerStackProps extends NestedStackBaseProps {
@@ -18,14 +18,16 @@ export class DeployerStack extends NestedStackBase {
   readonly stateStack: StateStack
   readonly githubOidcProviderArn: string
   readonly codePipelines: Pipeline[] = []
-  codeBuild: PipelineProject
+  codeBuildRo: PipelineProject
+  codeBuildRw: PipelineProject
   sdPipeline: Pipeline
 
   constructor(scope: Construct, id: string, props: DeployerStackProps) {
     super(scope, id, props)
     this.stateStack = props.stateStack
 
-    this.initCodeBuild()
+    this.initCodeBuildRo()
+    this.initCodeBuildRw()
     this.initPipelines()
   }
 
@@ -34,13 +36,14 @@ export class DeployerStack extends NestedStackBase {
     this.config.appModules.forEach(appName => {
       this.codePipelines.push(
         this.initCodePipeline(
-          this.config.rootConfig.stageConfig(this.config.stageName, appName) as DeployerStageProps
+          this.config.rootConfig.stageConfig(this.config.stageName, appName) as DeployerStageProps,
+          this.config.noApprovalDeploy,
         )
       )
     })
   }
 
-  private initCodePipeline (props: DeployerStageProps): Pipeline {
+  private initCodePipeline (props: DeployerStageProps, noApprovalDeploy: boolean): Pipeline {
     // init deployment code pipeline for given app & regions
     const {
       project,
@@ -49,9 +52,16 @@ export class DeployerStack extends NestedStackBase {
       regions,
     } = props
 
-    const pipelineName = `${project}-${appName}-${stageName}`
+    const pipelineName = `${project}-${stageName}-${appName}`
     const configArtifact = new Artifact(pipelineName)
-    const bucketKey = `${stageName}.zip`
+    const bucketKey = `${appName}.zip`
+
+    const environmentVariables = {
+      CMD: { value: 'ls' },
+      REGION: { value: '*' },
+      APP: { value: appName },
+      STAGE: { value: stageName },
+    }
 
     const sourceAction = new S3SourceAction({
       bucketKey,
@@ -61,62 +71,77 @@ export class DeployerStack extends NestedStackBase {
       trigger: S3Trigger.NONE,
     })
 
-    const diffActions = regions.map(region => {
-      const regname = regionToCode(region)
-      return new CodeBuildAction({
-        runOrder: 1,
-        actionName: `diff-${regname}`,
-        project: this.codeBuild,
-        input: configArtifact,
-        environmentVariables: {
-          CMD: {
-            value: 'diff',
-          },
-        },
-      })
-    })
+    let runOrder = 0
+    const deployActions: Action[] = []
 
-    const deployActions = regions.map(region => {
+    // optional diff & approval actions
+    if (!noApprovalDeploy) {
+      runOrder++
+      deployActions.push(
+        ...regions.map(region => {
+          const regname = regionToCode(region)
+          return new CodeBuildAction({
+            runOrder,
+            actionName: `diff-${regname}`,
+            project: this.codeBuildRo,
+            input: configArtifact,
+            environmentVariables: {
+              ...environmentVariables,
+              CMD: {
+                value: 'diff',
+              },
+              REGION: {
+                value: regname,
+              },
+            },
+          })
+        })
+      )
+
+      runOrder++
+      deployActions.push(new ManualApprovalAction({
+        runOrder,
+        actionName: `approve-deploy`,
+      }))
+    }
+
+    // deployment actions
+    runOrder++
+    deployActions.push(...regions.map(region => {
       const regname = regionToCode(region)
       return new CodeBuildAction({
-        runOrder: 3,
+        runOrder,
         actionName: `deploy-${regname}`,
-        project: this.codeBuild,
+        project: this.codeBuildRw,
         input: configArtifact,
         environmentVariables: {
+          ...environmentVariables,
           CMD: {
             value: 'deploy',
           },
+          REGION: {
+            value: regname,
+          },
         },
       })
-    })
-
-    const approveAction = new ManualApprovalAction({
-      runOrder: 2,
-      actionName: `approve-deploy`,
-    })
+    }))
 
     return new Pipeline(this, `${appName}-${stageName}-pipeline`, {
       pipelineName,
       artifactBucket: this.stateStack.artifactsBucket,
-      restartExecutionOnUpdate: appName === this.config.appName,
       stages: [{
         stageName: 'read-config',
         actions: [ sourceAction ],
       }, {
         stageName: `deploy-${stageName}-${appName}`,
-        actions: [
-          ...diffActions,
-          ...deployActions,
-          approveAction,
-        ],
+        actions: deployActions,
       }],
     })
   }
 
-  private initCodeBuild () {
-    const projectName = `${this.config.project}-${this.config.appName}-${this.config.stageName}`
-    this.codeBuild = new PipelineProject(this, 'CodeBuild', {
+  private createCodeBuild(rw: boolean) {
+    const projectName = `${this.config.project}-${this.config.appName}-${this.config.stageName}-${rw ? 'rw' : 'ro'}`
+    const codeBuild = new PipelineProject(this, `CodeBuild-${rw ? 'rw' : 'ro'}`, {
       projectName,
       logging: {
         cloudWatch: {
@@ -142,7 +167,7 @@ export class DeployerStack extends NestedStackBase {
               'export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r \'.AccessKeyId\')',
               'export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r \'.SecretAccessKey\')',
               '$(aws ecr get-login --no-include-email)',
-              'export IMAGE=${DEPLOYER_IMAGE}:$(cat ' + this.config.stageName + ')',
+              'export IMAGE=${DEPLOYER_IMAGE}:$(cat $APP)',
               'docker pull $IMAGE',
             ]
           },
@@ -155,7 +180,7 @@ export class DeployerStack extends NestedStackBase {
                 '-e AWS_SECRET_ACCESS_KEY',
                 '-e AWS_DEFAULT_REGION',
                 '-e AWS_REGION',
-                '--rm $IMAGE $CMD',
+                '--rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD',
               ].join(' '),
             ],
           },
@@ -163,25 +188,30 @@ export class DeployerStack extends NestedStackBase {
       })
     })
 
-    this.codeBuild.addToRolePolicy(new PolicyStatement({
+    codeBuild.addToRolePolicy(new PolicyStatement({
       actions: [ 'ecr:GetAuthorizationToken' ],
       resources: [ '*' ],
     }))
 
-    this.codeBuild.addToRolePolicy(new PolicyStatement({
+    const cdkRoleTypes = rw
+      ? [ 'deploy', 'file-publishing', 'image-publishing', 'lookup' ]
+      : [ 'lookup' ]
+
+    codeBuild.addToRolePolicy(new PolicyStatement({
       actions: [ 'sts:AssumeRole' ],
-      resources: [ 'deploy', 'file-publishing', 'image-publishing', 'lookup' ]
+      resources: cdkRoleTypes
         .map(type =>
-          [
-            'arn', this.partition, 'iam', '', Aws.ACCOUNT_ID,
-            `role/cdk-hnb659fds-${type}-role-${Aws.ACCOUNT_ID}-${Aws.REGION}`,
-          ].join(':')
+          `arn:${this.partition}:iam::${Aws.ACCOUNT_ID}:`
+          + `role/cdk-hnb659fds-${type}-role-${Aws.ACCOUNT_ID}-*`
         ),
     }))
 
     // grant role access to secret
-    this.codeBuild.addToRolePolicy(new PolicyStatement({
-      actions: [ 'secretsmanager:GetSecretValue' ],
+    codeBuild.addToRolePolicy(new PolicyStatement({
+      actions: [
+        'secretsmanager:GetSecretValue',
+        'secretsmanager:DescribeSecret',
+      ],
       resources: [
         [
           `arn:${this.partition}:secretsmanager:${this.region}:`,
@@ -191,10 +221,37 @@ export class DeployerStack extends NestedStackBase {
       ],
     }))
 
-    if (!this.codeBuild.role) {
+    if (!codeBuild.role) {
       throw Error('No role found on codeBuild project instance')
     }
 
-    this.stateStack.deployerEcrRepo.grantPull(this.codeBuild.role)
+    this.stateStack.deployerEcrRepo.grantPull(codeBuild.role)
+
+    if (rw) {
+      // grant role access to create and update app secrets
+      codeBuild.addToRolePolicy(new PolicyStatement({
+        actions: [
+          'secretsmanager:UpdateSecret',
+          'secretsmanager:CreateSecret',
+        ],
+        resources: [
+          [
+            `arn:${this.partition}:secretsmanager:${this.region}:`,
+            `${Aws.ACCOUNT_ID}:secret:`,
+            `${this.config.project}/${this.config.stageName}/*`,
+          ].join(''),
+        ],
+      }))
+    }
+
+    return codeBuild
+  }
+
+  private initCodeBuildRo () {
+    this.codeBuildRo = this.createCodeBuild(false)
+  }
+
+  private initCodeBuildRw () {
+    this.codeBuildRw = this.createCodeBuild(true)
   }
 }

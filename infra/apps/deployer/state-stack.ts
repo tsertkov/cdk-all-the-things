@@ -8,13 +8,11 @@ import { DeployerStageProps } from './deployer-config'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 
 export interface StateStackProps extends NestedStackBaseProps {
-  readonly deploymentArtifactName: string
 }
 
 export class StateStack extends NestedStackBase {
   protected readonly config: DeployerStageProps
   readonly githubOidcProviderArn: string
-  readonly deploymentArtifactName: string
   ciRole: Role
   artifactsBucket: Bucket
   deployerEcrRepo: Repository
@@ -23,8 +21,7 @@ export class StateStack extends NestedStackBase {
   constructor(scope: Construct, id: string, props: StateStackProps) {
     super(scope, id, props)
 
-    this.deploymentArtifactName = props.deploymentArtifactName
-    this.githubOidcProviderArn = Fn.importValue('GithubOidcArn')
+    this.githubOidcProviderArn = Fn.importValue(this.config.githubOidcArnCfnOutput)
 
     this.initArtifactsBucket()
     this.initDeployerEcrRepo()
@@ -40,9 +37,10 @@ export class StateStack extends NestedStackBase {
   }
 
   private initCiRole () {
+    const githubSub = `repo:${this.config.githubRepo}:environment:${this.config.stageName}`
     const federatedPrincipal = new FederatedPrincipal(this.githubOidcProviderArn, {
-      StringLike: {
-        'token.actions.githubusercontent.com:sub': `repo:${this.config.githubRepo}:*`,
+      StringEqualsIgnoreCase: {
+        'token.actions.githubusercontent.com:sub': githubSub,
       },
     }, 'sts:AssumeRoleWithWebIdentity')
 
@@ -50,8 +48,8 @@ export class StateStack extends NestedStackBase {
       assumedBy: federatedPrincipal,
     })
 
-    // grant permission to write deployment artifact to artifacts bucket
-    this.artifactsBucket.grantWrite(this.ciRole, this.deploymentArtifactName)
+    // grant permission to write to artifacts bucket
+    this.artifactsBucket.grantWrite(this.ciRole)
 
     // grant permission to push container images to ecr
     this.ciRole.addToPolicy(new PolicyStatement({
@@ -59,15 +57,31 @@ export class StateStack extends NestedStackBase {
       resources: [ '*' ],
     }))
 
-    // grant permission to trigger codepipeline for dev stage only
-    if (this.config.stageName === 'dev') {
-      this.ciRole.addToPolicy(new PolicyStatement({
-        actions: [ 'codepipeline:StartPipelineExecution' ],
-        resources: [ `arn:${this.partition}:codepipeline:${this.region}:${Aws.ACCOUNT_ID}:CdkGoLambdas-deployer-dev` ],
-      }))
-    }
+    const pipelineName = `${this.config.project}-${this.config.stageName}-*`
+    this.ciRole.addToPolicy(new PolicyStatement({
+      actions: [
+        'codepipeline:StartPipelineExecution',
+        'codepipeline:GetPipelineExecution',
+        'codepipeline:StopPipelineExecution',
+      ],
+      resources: [ `arn:${this.partition}:codepipeline:${this.region}:${Aws.ACCOUNT_ID}:${pipelineName}` ],
+    }))
 
     this.deployerEcrRepo.grantPullPush(this.ciRole)
+
+    if (this.config.promotionSrc) {
+      // grant pull access to promotionSrc repo
+      this.ciRole.addToPolicy(new PolicyStatement({
+        actions: [
+          'ecr:BatchCheckLayerAvailability',
+          'ecr:BatchGetImage',
+          'ecr:GetDownloadUrlForLayer',
+        ],
+        resources: [
+          `arn:${this.partition}:ecr:${this.region}:${Aws.ACCOUNT_ID}:repository/${this.deployerRepoName(this.config.promotionSrc)}`,
+        ],
+      }))
+    }
   }
 
   private initArtifactsBucket () {
@@ -78,15 +92,17 @@ export class StateStack extends NestedStackBase {
   }
 
   private initDeployerEcrRepo() {
-    const repositoryName = [
-      this.config.project.toLowerCase(),
-      this.config.stageName,
-      'deployer',
-    ].join('-')
-
     this.deployerEcrRepo = new Repository(this, 'DeployerEcrRepo', {
-      repositoryName,
+      repositoryName: this.deployerRepoName(this.config.stageName),
       removalPolicy: this.config.removalPolicy,
     })
+  }
+
+  private deployerRepoName(stageName: string) {
+    return [
+      this.config.project.toLowerCase(),
+      stageName,
+      'deployer',
+    ].join('-')
   }
 }

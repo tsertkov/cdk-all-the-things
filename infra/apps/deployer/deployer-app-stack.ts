@@ -1,7 +1,6 @@
 import { Construct } from 'constructs'
 import { deterministicName, setNameTag } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
-import { MonitorStack } from '../../lib/monitor-stack'
 import { StateStack } from './state-stack'
 import { DeployerStack } from './deployer-stack'
 import { CfnOutput } from 'aws-cdk-lib'
@@ -13,7 +12,6 @@ export class DeployerAppStack extends StackBase {
   protected readonly config: DeployerStageProps
   stateStack: StateStack
   deployerStack: DeployerStack
-  monitorStack: MonitorStack
 
   constructor(scope: Construct, id: string, props: DeployerAppStackProps) {
     super(scope, id, props)
@@ -24,7 +22,6 @@ export class DeployerAppStack extends StackBase {
   private initNestedStacks(props: DeployerAppStackProps) {
     this.stateStack = new StateStack(this, 'State', {
       config: props.config,
-      deploymentArtifactName: this.config.stageName + '.zip',
     })
 
     setNameTag(this.stateStack, 'StateStack')
@@ -35,15 +32,6 @@ export class DeployerAppStack extends StackBase {
     })
 
     setNameTag(this.deployerStack, 'DeployerStack')
-
-    this.monitorStack = new MonitorStack(this, 'Monitor', {
-      config: this.config,
-      logGroupNames: {
-        'DeployerLogs': this.stateStack.deployerLogGroup.logGroupName,
-      },
-    })
-
-    setNameTag(this.monitorStack, 'MonitorStack')
   }
 
   private initOutputs() {

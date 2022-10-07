@@ -3,6 +3,9 @@ import appModules from '..'
 
 export interface DeployerStageProps extends StageProps {
   readonly githubRepo: string
+  readonly githubOidcArnCfnOutput: string
+  readonly noApprovalDeploy: boolean
+  readonly promotionSrc: string
   rootConfig: Config
   appModules: string[]
 }
