@@ -28,7 +28,7 @@ be:
 
 deployer:
   common:
-    githubRepo: tsertkov/cdk-all-the-things-pivate
+    githubRepo: tsertkov/cdk-all-the-things
     githubOidcArnCfnOutput: GithubOidcArn
     regions:
       - eu-central-1
