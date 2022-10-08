@@ -236,7 +236,7 @@ export class DeployerStack extends NestedStackBase {
         ],
         resources: [
           [
-            `arn:${this.partition}:secretsmanager:${this.region}:`,
+            `arn:${this.partition}:secretsmanager:*:`,
             `${Aws.ACCOUNT_ID}:secret:`,
             `${this.config.project}/${this.config.stageName}/*`,
           ].join(''),
