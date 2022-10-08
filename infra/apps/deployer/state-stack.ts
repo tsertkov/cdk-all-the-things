@@ -1,4 +1,4 @@
-import { Aws, Fn } from 'aws-cdk-lib'
+import { Aws, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { FederatedPrincipal, PolicyStatement, Role } from 'aws-cdk-lib/aws-iam'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
@@ -85,8 +85,10 @@ export class StateStack extends NestedStackBase {
   }
 
   private initArtifactsBucket () {
+    const autoDeleteObjects = this.config.removalPolicy === RemovalPolicy.DESTROY
     this.artifactsBucket = new Bucket(this, 'ArtifactsBucket', {
       removalPolicy: this.config.removalPolicy,
+      autoDeleteObjects,
       versioned: true,
     })
   }

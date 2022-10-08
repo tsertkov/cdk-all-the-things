@@ -5,6 +5,9 @@ import { CfnDeliveryStream } from 'aws-cdk-lib/aws-kinesisfirehose'
 import { MonitorStageProps } from './monitor-config'
 import { PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
 import { LogStream } from 'aws-cdk-lib/aws-logs'
+import { deterministicName, regionToCode } from '../../lib/utils'
+import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3'
+import { Aws } from 'aws-cdk-lib'
 
 export interface LogStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack
@@ -12,9 +15,11 @@ export interface LogStackProps extends NestedStackBaseProps {
 
 export class LogStack extends NestedStackBase {
   protected readonly config: MonitorStageProps
+  globalLogsBucket: IBucket
   stateStack: StateStack
   deliveryStream: CfnDeliveryStream
   firehoseRole: Role
+  subscriptionFilterRole: Role
   deliveryBackupLogStream: LogStream
   deliveryLogStream: LogStream
 
@@ -22,8 +27,42 @@ export class LogStack extends NestedStackBase {
     super(scope, id, props)
     this.stateStack = props.stateStack
 
+    this.importGlobalLogsBucket()
     this.initFirehoseRole()
     this.initDeliveryStream()
+    this.initSubscriptionFilterRole()
+  }
+
+  private initSubscriptionFilterRole () {
+    const regCode = regionToCode(this.region)
+    const logDeliveryStreamName = `${this.config.project}-${this.config.stageName}-${regCode}-monitor-LogDeliveryStream`
+    const logDeliveryStreamArn = `arn:${this.partition}:firehose:`
+      + `${this.region}:${Aws.ACCOUNT_ID}:deliverystream/`
+      + logDeliveryStreamName
+
+    const subscriptionFilterRole = new Role(this, 'SubscriptionFilterRole', {
+      roleName: deterministicName(this, 'SubscriptionFilterRole'),
+      assumedBy: new ServicePrincipal('logs.amazonaws.com'),
+    })
+
+    subscriptionFilterRole.addToPolicy(
+      new PolicyStatement({
+        actions: [
+          'firehose:DescribeDeliveryStream',
+          'firehose:PutRecord',
+          'firehose:PutRecordBatch',
+        ],
+        resources: [ logDeliveryStreamArn ],
+      }
+    ))
+  }
+
+  private importGlobalLogsBucket () {
+    const logsBucketName = deterministicName(this, this.config.logsBucketName)
+      .replace(`-monitor-${this.config.logsBucketName}`, `-monitor-global-${this.config.logsBucketName}`)
+      .toLowerCase() + '-' + Aws.ACCOUNT_ID
+
+    this.globalLogsBucket = Bucket.fromBucketName(this, 'LogsBucket', logsBucketName)
   }
 
   private initFirehoseRole () {
@@ -31,17 +70,12 @@ export class LogStack extends NestedStackBase {
       assumedBy: new ServicePrincipal('firehose.amazonaws.com'),
     })
 
-    this.stateStack.logsBucket.grantReadWrite(this.firehoseRole)
     this.stateStack.logDeliveryLogGroup.grantWrite(this.firehoseRole)
+    this.globalLogsBucket.grantReadWrite(this.firehoseRole)
   }
 
   private initDeliveryStream () {
-    const deliveryStreamName = [
-      this.config.project,
-      this.config.stageName,
-      this.config.appName,
-      'LogDeliveryStream',
-    ].join('-')
+    const deliveryStreamName = deterministicName(this, 'LogDeliveryStream')
 
     const logDeliveryLogStream = new LogStream(this, 'LogDelivery', {
       logGroup: this.stateStack.logDeliveryLogGroup,
@@ -52,7 +86,7 @@ export class LogStack extends NestedStackBase {
       deliveryStreamName,
       s3DestinationConfiguration: {
         roleArn: this.firehoseRole.roleArn,
-        bucketArn: this.stateStack.logsBucket.bucketArn,
+        bucketArn: this.globalLogsBucket.bucketArn,
         cloudWatchLoggingOptions: {
           enabled: true,
           logGroupName: this.stateStack.logDeliveryLogGroup.logGroupName,

@@ -57,15 +57,12 @@ export class BeAppStack extends StackBase {
     this.monitorStack = new MonitorStack(this, 'Monitor', {
       config: this.config,
       monitorRegion: this.config.monitorRegion,
-      logGroupNames: {
-        'ApiLambda': this.apiStack.apiLambda.logGroup.logGroupName,
-        'RestApi': this.apiStack.restApiLogGroup.logGroupName,
-        'EngineLambda': this.engineStack.engineLambda.logGroup.logGroupName,
-      },
+      logGroupNames: [
+        this.apiStack.apiLambda.logGroup.logGroupName,
+        this.apiStack.restApiLogGroup.logGroupName,
+        this.engineStack.engineLambda.logGroup.logGroupName,
+      ],
     })
-
-    this.monitorStack.addDependency(this.apiStack)
-    this.monitorStack.addDependency(this.engineStack)
 
     setNameTag(this.monitorStack, 'MonitorStack')
   }

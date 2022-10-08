@@ -33,10 +33,21 @@ jobs:
       version: ${{ needs.deployer-image.outputs.version }}
     secrets: inherit
 
-  monitor:
+  monitor-global:
     needs:
       - deployer-image
       - deployer
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: monitor-global
+      environment: ${{ inputs.environment || 'dev' }}
+      version: ${{ needs.deployer-image.outputs.version }}
+    secrets: inherit
+
+  monitor:
+    needs:
+      - deployer-image
+      - monitor-global
     uses: ./.github/workflows/deploy-stage.yaml
     with:
       app: monitor

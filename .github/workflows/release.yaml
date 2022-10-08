@@ -28,10 +28,21 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  stg-monitor:
+  stg-monitor-global:
     needs:
       - version
       - stg-deployer
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: monitor-global
+      environment: stg
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  stg-monitor:
+    needs:
+      - version
+      - stg-monitor-global
     uses: ./.github/workflows/deploy-stage.yaml
     with:
       app: monitor
@@ -75,10 +86,21 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  prd-monitor:
+  prd-monitor-global:
     needs:
       - version
       - prd-deployer
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: monitor-global
+      environment: prd
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  prd-monitor:
+    needs:
+      - version
+      - prd-monitor-global
     uses: ./.github/workflows/deploy-stage.yaml
     with:
       app: monitor

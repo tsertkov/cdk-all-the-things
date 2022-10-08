@@ -1,50 +1,38 @@
 import { Construct } from 'constructs'
 import { Aws } from 'aws-cdk-lib'
 import { CfnSubscriptionFilter } from 'aws-cdk-lib/aws-logs'
-import { PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
 import { NestedStackBase, NestedStackBaseProps } from './nested-stack-base'
+import { regionToCode } from './utils'
 
 interface MonitorStackProps extends NestedStackBaseProps {
-  logGroupNames: Record<string, string>
+  logGroupNames: string[]
   monitorRegion: string
 }
 
 export class MonitorStack extends NestedStackBase {
-  readonly logDeliveryStreamArn: string
-  readonly logGroupNames: Record<string, string>
-
   constructor(scope: Construct, id: string, props: MonitorStackProps) {
     super(scope, id, props)
-    this.logGroupNames = props.logGroupNames
-    this.logDeliveryStreamArn = `arn:${this.partition}:firehose:`
-      + `${props.monitorRegion}:${Aws.ACCOUNT_ID}:deliverystream/`
-      + `${this.config.project}-${this.config.stageName}-monitor-LogDeliveryStream`
-    this.initLogSubscriptions()
+    this.initLogSubscriptions(props.logGroupNames)
   }
 
-  private initLogSubscriptions () {
-    const subscriptionFilterRole = new Role(this, 'SubscriptionFilterRole', {
-      assumedBy: new ServicePrincipal('logs.amazonaws.com'),
-    })
+  private initLogSubscriptions (logGroupNames: string[]) {
+    const regCode = regionToCode(this.region)
 
-    subscriptionFilterRole.addToPolicy(
-      new PolicyStatement({
-        actions: [
-          'firehose:DescribeDeliveryStream',
-          'firehose:PutRecord',
-          'firehose:PutRecordBatch',
-        ],
-        resources: [ this.logDeliveryStreamArn ],
-      }
-    ))
+    const logDeliveryStreamName = `${this.config.project}-${this.config.stageName}-${regCode}-monitor-LogDeliveryStream`
+    const logDeliveryStreamArn = `arn:${this.partition}:firehose:`
+      + `${this.region}:${Aws.ACCOUNT_ID}:deliverystream/`
+      + logDeliveryStreamName
 
-    for (const [name, logGroupName] of Object.entries(this.logGroupNames)) {
-      new CfnSubscriptionFilter(this, `SubscriptionFilter${name}`, {
-        destinationArn: this.logDeliveryStreamArn,
-        roleArn: subscriptionFilterRole.roleArn,
+    const subscriptionFilterRoleName = `${this.config.project}-${this.config.stageName}-${regCode}-monitor-SubscriptionFilterRole`
+    const subscriptionFilterRoleArn = `arn:${this.partition}:iam::${Aws.ACCOUNT_ID}:role/${subscriptionFilterRoleName}`
+
+    logGroupNames.forEach((logGroupName, i) =>
+      new CfnSubscriptionFilter(this, `SubscriptionFilter${i}`, {
+        destinationArn: logDeliveryStreamArn,
+        roleArn: subscriptionFilterRoleArn,
         filterPattern: '',
         logGroupName,
       })
-    }
+    )
   }
 }

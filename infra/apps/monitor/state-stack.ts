@@ -1,21 +1,20 @@
 import { Construct } from 'constructs'
-import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { CfnGroup } from 'aws-cdk-lib/aws-resourcegroups'
+import { MonitorStageProps } from './monitor-config'
 
 export interface StateStackProps extends NestedStackBaseProps {
 }
 
 export class StateStack extends NestedStackBase {
-  logsBucket: Bucket
+  protected readonly config: MonitorStageProps
   logDeliveryLogGroup: LogGroup
   resourceGroup: CfnGroup
 
   constructor(scope: Construct, id: string, props: StateStackProps) {
     super(scope, id, props)
     this.initResourceGroup()
-    this.initLogsBucket()
     this.initLogDeliveryLogGroup()
   }
 
@@ -31,12 +30,6 @@ export class StateStack extends NestedStackBase {
           }],
         },
       },
-    })
-  }
-
-  private initLogsBucket () {
-    this.logsBucket = new Bucket(this, 'LogsBucket', {
-      removalPolicy: this.config.removalPolicy,
     })
   }
 
