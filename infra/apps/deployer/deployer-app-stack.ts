@@ -35,9 +35,9 @@ export class DeployerAppStack extends StackBase {
   }
 
   private initOutputs() {
-    new CfnOutput(this, 'CiRoleArn', {
-      value: this.stateStack.ciRole.roleArn,
-      exportName: deterministicName(this, 'CiRoleArn'),
+    new CfnOutput(this, 'CiRoleName', {
+      value: this.stateStack.ciRole.roleName,
+      exportName: deterministicName(this, 'CiRoleName'),
     })
 
     new CfnOutput(this, 'DeployerEcrRepoUri', {

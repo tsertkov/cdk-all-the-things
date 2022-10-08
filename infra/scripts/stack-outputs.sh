@@ -2,20 +2,14 @@
 
 set -eu
 
-stack=$1
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${DIR}/functions.sh"
 
-region_by_regname () {
-    case $1 in
-        euc1)
-            echo eu-central-1 ;;
-        use1)
-            echo us-east-1 ;;
-    esac
-}
+stack=$1
 
 regname=${stack#*-*-}
 regname=${regname%/*}
-region=$(region_by_regname $regname)
+region=$(region_by_code $regname)
 
 AWS_REGION=$region aws cloudformation describe-stacks \
     --stack-name ${stack/\//-} \

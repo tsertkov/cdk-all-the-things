@@ -1,10 +1,15 @@
 #!/usr/bin/env sh
 
-set -eu
+set -e
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${DIR}/functions.sh"
 
 operation=$1
 stage=$2
 app=$3
+regcode=$4
+region=
 
 echo $operation secrets for $stage-$app
 
@@ -34,10 +39,23 @@ run_secret_operation () {
     fi
 }
 
+if [ -z "$regcode" -o "$regcode" != "*" ]; then
+    region=$(region_by_code $regcode)
+    if [ -z "$region" ]; then
+        echo "Unknown region code: '$regcode'"
+        exit 1
+    fi
+fi
+
 for secret in "$secrets"; do
     key=${project}/${stage}/${app}/$(echo "$secret" | sed "s/:.*$//")
     value=$(echo "$secret" | sed "s/^.*: //")
-    for region in $regions; do
-        run_secret_operation $operation $region $key $value
-    done
+
+    if [ -z "$region" ]; then
+        for region in $regions; do
+            run_secret_operation "$operation" "$region" "$key" "$value"
+        done
+    else
+        run_secret_operation "$operation" "$region" "$key" "$value"
+    fi
 done

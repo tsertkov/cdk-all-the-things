@@ -66,11 +66,11 @@ sops: $(key_file)
 
 .PHONY: secrets-aws-update
 secrets-aws-update: secrets
-	@./infra/scripts/aws-secrets.sh update $(stage) $(app)
+	@./infra/scripts/aws-secrets.sh update "$(stage)" "$(app)" "$(region)"
 
 .PHONY: secrets-aws-delete
 secrets-aws-delete: secrets
-	@./infra/scripts/aws-secrets.sh delete $(stage) $(app)
+	@./infra/scripts/aws-secrets.sh delete "$(stage)" "$(app)" "$(region)"
 
 .PHONY: lambdas
 lambdas:
