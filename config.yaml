@@ -6,6 +6,12 @@ common:
   tags:
     owner: Al
 
+apps:
+  - deployer
+  - monitor-global
+  - monitor
+  - be
+
 stages:
   prd:
   stg:
