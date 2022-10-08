@@ -55,6 +55,7 @@ monitor-global:
 monitor:
   common:
     logsBucketName: logs-eeb9aW
+    globalRegion: eu-central-1
     regions:
       - eu-central-1
       - us-east-1

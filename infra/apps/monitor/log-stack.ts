@@ -58,9 +58,13 @@ export class LogStack extends NestedStackBase {
   }
 
   private importGlobalLogsBucket () {
-    const logsBucketName = deterministicName(this, this.config.logsBucketName)
-      .replace(`-monitor-${this.config.logsBucketName}`, `-monitor-global-${this.config.logsBucketName}`)
-      .toLowerCase() + '-' + Aws.ACCOUNT_ID
+    const logsBucketName = [
+      this.config.project,
+      this.config.stageName,
+      regionToCode(this.config.globalRegion),
+      'monitor-global',
+      this.config.logsBucketName,
+    ].join('-').toLowerCase() + '-' + Aws.ACCOUNT_ID
 
     this.globalLogsBucket = Bucket.fromBucketName(this, 'LogsBucket', logsBucketName)
   }
