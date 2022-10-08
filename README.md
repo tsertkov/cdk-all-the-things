@@ -24,6 +24,8 @@ Build commands:
 - `make infra` - build infra deployer container image
 - `make secrets` - unencrypt secrets.sops.yaml into secrets.yaml
 - `make sops` - edit encrypted secrets.sops.yaml file
+- `make secrets-aws-update` - set secrets in aws from secrets.yaml
+- `make secrets-aws-delete` - delete secrets in aws set from secrets.yaml
 - `make clean` - remove compiled lambdas and secrets
 
 CDK commands:

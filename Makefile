@@ -60,17 +60,17 @@ secrets.yaml: $(key_file)
 .PHONY: secrets
 secrets: secrets.yaml
 
-.PHONY: secrets-aws-update
-secrets-aws-update:
-	@./infra/scripts/aws-secrets.sh update $(stage) $(app)
-
-.PHONY: secrets-aws-remove
-secrets-aws-delete:
-	@./infra/scripts/aws-secrets.sh delete $(stage) $(app)
-
 .PHONY: sops
 sops: $(key_file)
 	@SOPS_AGE_KEY_FILE=$(key_file) sops secrets.sops.yaml
+
+.PHONY: secrets-aws-update
+secrets-aws-update: secrets
+	@./infra/scripts/aws-secrets.sh update $(stage) $(app)
+
+.PHONY: secrets-aws-delete
+secrets-aws-delete: secrets
+	@./infra/scripts/aws-secrets.sh delete $(stage) $(app)
 
 .PHONY: lambdas
 lambdas:
