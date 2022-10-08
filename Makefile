@@ -14,7 +14,7 @@ else
 endif
 
 apps ?= $(shell yq '.apps' config.yaml | sed 's/- //' | xargs)
-apps_r ?= $(shell echo $(apps) | aws '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
+apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
 project ?= $(shell yq '.common.project' config.yaml)
 stacks := *-$(stage)-$(region)/$(app)
 infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)

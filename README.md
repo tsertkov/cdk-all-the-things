@@ -4,12 +4,9 @@ Multi-region, multi-environment AWS CDK and Golang cloud application playground.
 
 ## Prerequisites
 
-- make
-- nodejs
-- docker
-- aws-cli
-- [yq](https://github.com/mikefarah/yq)
-- [age](https://github.com/FiloSottile/age) key (see [infra-bootstrap](./infra-bootstrap/README.md))
+Tools: make, nodejs, docker, aws-cli, awk, sed, xargs, [yq](https://github.com/mikefarah/yq)
+
+[age](https://github.com/FiloSottile/age) key (see [infra-bootstrap](./infra-bootstrap/README.md))
 
 ## Usage
 
