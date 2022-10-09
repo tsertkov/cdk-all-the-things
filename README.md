@@ -4,31 +4,37 @@ Multi-region, multi-environment AWS CDK and Golang cloud application playground.
 
 ## Prerequisites
 
-Tools: make, nodejs, docker, sops, aws-cli, awk, sed, xargs, [yq](https://github.com/mikefarah/yq)
-
-[age](https://github.com/FiloSottile/age) key (see [infra-bootstrap](./infra-bootstrap/README.md))
+Tools: make, nodejs, docker, sops, aws-cli, awk, sed, xargs, [yq](https://github.com/mikefarah/yq), [age](https://github.com/FiloSottile/age).
 
 ## Usage
 
-1) Clone `git` repo
-2) Install dependencies by running `make init`
-3) Run commands with `make`
+Bootstrapping:
 
-Commands:
+- `git clone ...` - Clone this git repo
+- Edit configuration parameters in `config.yaml`
+- `make init` - Install dependencies
+- `make bootstrap-github-oidc` - Optionally bootstrap github oidc if Github Actions are used for deployments
+- `make bootstrap-secret-key` - Generage age secret key and store it in the cloud
+- `cp secrets-example.yaml secrets.yaml && make secrets-encrypt` - Encrypt provided example secrets
+
+Make commands:
 
 - `make init` - install infra dependencies
+- `make bootstrap-github-oidc` - deploy cfn stack with github oidc
+- `make bootstrap-secret-key` - generate age secret key and store it in the cloud
 - `make ls` - list infra stacks for given region
 - `make lsa` - list infra stacks for all regions
 - `make lsa-all` - list all stacks for all apps
 - `make ci` - build all
 - `make build-lambdas` - build lambdas
 - `make build-infra` - build infra deployer container image
-- `make secrets` - unencrypt secrets into plan text file with sops
-- `make secrets-edit` - edit encrypted secrets file with sops
-- `make secrets-aws-update` - set secrets in aws from unencrypted secrets
-- `make secrets-aws-delete` - delete secrets in aws set from unencrypted secrets
-- `make clean` - remove compiled lambdas and unencrypted secrets
-- `make clean-secrets` - remove unencrypted secrets file
+- `make secrets-decrypt` - decrypt secrets into plan text file
+- `make secrets-encrypt` - encrypt secrets from plan text file
+- `make secrets-edit` - edit encrypted secrets file or create new
+- `make secrets-aws-update` - set secrets in aws from decrypted secrets
+- `make secrets-aws-delete` - delete secrets in aws set from decrypted secrets
+- `make clean` - remove compiled lambdas and decrypted secrets
+- `make clean-secrets` - remove decrypted secrets file
 - `make clean-lambdas` - remove compiled lambdas
 - `make diff` - diff infra changes
 - `make diff-all` - diff infra changes for all apps

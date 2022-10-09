@@ -13,7 +13,9 @@ config_file := config.yaml
 secrets_sops_file := secrets.sops.yaml
 secrets_file := secrets.yaml
 secret_name := deployer/age-key
+secret_region := eu-central-1
 key_file := key.txt
+public_key ?= $(shell grep '^\# public key: ' key.txt | sed 's/^.*: //')
 stacks := *-$(stage)-$(region)/$(app)
 app_ext := $(shell test ! -f Dockerfile && echo js || echo ts)
 infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
@@ -41,11 +43,27 @@ PHONY: lsa-all
 lsa-all:
 	@$(call iterate_apps,lsa)
 
-### build commands
+### init commands
 
 PHONY: init
 init:
 	@cd infra && npm i
+
+.PHONY: bootstrap-github-oidc
+bootstrap-github-oidc:
+	@aws cloudformation create-stack \
+		--stack-name github-oidc \
+		--template-body file://infra/bootstrap/github-oidc.cfn.yaml
+
+.PHONY: bootstrap-secret-key
+bootstrap-secret-key: secret_create_or_update_args := $(project)/$(secret_name) --region $(secret_region) --secret-string "$$(cat $(key_file))"
+bootstrap-secret-key:
+	@test -f $(key_file) && echo "Secrets key file already exits" && exit 1 ; \
+	age-keygen -o $(key_file); \
+	aws secretsmanager create-secret --name $(secret_create_or_update_args) 2>/dev/null \
+		||	aws secretsmanager update-secret --secret-id $(secret_create_or_update_args)
+
+### build commands
 
 .PHONY: ci
 ci: clean build-lambdas build-infra
@@ -76,21 +94,32 @@ clean-lambdas:
 ### secrets commands
 
 $(key_file):
-	@aws secretsmanager describe-secret --secret-id $(project)/$(secret_name) > /dev/null
-	@aws secretsmanager get-secret-value --secret-id $(project)/$(secret_name) --query SecretString --output text > $(key_file)
+	@aws secretsmanager describe-secret \
+		--region $(secret_region) \
+		--secret-id $(project)/$(secret_name) \
+		> /dev/null
+	@aws secretsmanager get-secret-value \
+		--region $(secret_region) \
+		--secret-id $(project)/$(secret_name) \
+		--query SecretString \
+		--output text \
+		> $(key_file)
 
 .PHONY: $(secrets_file)
 $(secrets_file): $(key_file)
 	@SOPS_AGE_KEY_FILE=$(key_file) sops -d $(secrets_sops_file) > $(secrets_file)
 
-.PHONY: secrets
-secrets: $(secrets_file)
+.PHONY: secrets-decrypt
+secrets-decrypt: $(secrets_file)
+
+.PHONY: secrets-encrypt
+secrets-encrypt: $(key_file)
+	@test ! -f $(secrets_file) && echo $(secrets_file) does not exists && exit 1; \
+	SOPS_AGE_KEY_FILE=$(key_file) sops -e --age $(public_key) $(secrets_file) > $(secrets_sops_file)
 
 .PHONY: secrets-edit
 secrets-edit: $(key_file)
-	@SOPS_AGE_KEY_FILE=$(key_file) sops $(secrets_sops_file)
-	@$(MAKE) -s clean-secrets
-	@$(MAKE) -s secrets
+	@SOPS_AGE_KEY_FILE=$(key_file) sops --age $(public_key) $(secrets_sops_file)
 
 .PHONY: secrets-aws-update
 secrets-aws-update: secrets
@@ -103,7 +132,7 @@ secrets-aws-delete: secrets
 ### cdk commands
 
 .PHONY: diff
-diff: secrets
+diff: secrets-decrypt
 	@$(infra_cmd) diff $(stacks)
 
 .PHONY: diff-all
@@ -111,7 +140,7 @@ diff-all:
 	@$(call iterate_apps,diff)
 
 .PHONY: deploy
-deploy: secrets
+deploy: secrets-decrypt
 	@$(infra_cmd) deploy $(stacks)
 	@$(MAKE) -s secrets-aws-update
 
