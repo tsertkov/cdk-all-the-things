@@ -71,6 +71,8 @@ secrets: secrets.yaml
 .PHONY: sops
 sops: $(key_file)
 	@SOPS_AGE_KEY_FILE=$(key_file) sops secrets.sops.yaml
+	@$(MAKE) -s clean-secrets
+	@$(MAKE) -s secrets
 
 .PHONY: secrets-aws-update
 secrets-aws-update: secrets
