@@ -7,6 +7,7 @@ import { deterministicName, setNameTag, codeFromDir } from '../../lib/utils'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { EngineStateStack } from './engine-state-stack'
 import { BeStageProps } from './be-config'
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
 
 export interface EngineStackProps extends NestedStackBaseProps {
   readonly engineStateStack: EngineStateStack
@@ -28,6 +29,14 @@ export class EngineStack extends NestedStackBase {
   private initEngineLambda () {
     const code = codeFromDir(this.config.projectRootDir, 'go-app/bin/engine')
 
+    // convention based secret name assembling
+    const testsecretName = [
+      this.config.project,
+      this.config.stageName,
+      this.config.appName,
+      'testsecret',
+    ].join('/')
+
     this.engineLambda = new Function(this, 'EngineLambda', {
       code,
       description: deterministicName(this, 'EngineLambda'),
@@ -39,6 +48,7 @@ export class EngineStack extends NestedStackBase {
       environment: {
         STAGE_NAME: this.config.stageName,
         REGION_NAME: this.region,
+        TESTSECRET_NAME: testsecretName,
       },
     })
 
@@ -53,5 +63,9 @@ export class EngineStack extends NestedStackBase {
     this.engineLambdaAlias.addEventSource(
       new SqsEventSource(this.jobQueue)
     )
+
+    // grant lambda read access to testsecret
+    Secret.fromSecretNameV2(this, 'TestSecret', testsecretName)
+      .grantRead(this.engineLambdaAlias)
   }
 }
