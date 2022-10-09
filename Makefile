@@ -122,11 +122,11 @@ secrets-edit: $(key_file)
 	@SOPS_AGE_KEY_FILE=$(key_file) sops --age $(public_key) $(secrets_sops_file)
 
 .PHONY: secrets-aws-update
-secrets-aws-update: secrets
+secrets-aws-update: secrets-decrypt
 	@./infra/scripts/aws-secrets.sh update "$(stage)" "$(app)" "$(region)"
 
 .PHONY: secrets-aws-delete
-secrets-aws-delete: secrets
+secrets-aws-delete: secrets-decrypt
 	@./infra/scripts/aws-secrets.sh delete "$(stage)" "$(app)" "$(region)"
 
 ### cdk commands
