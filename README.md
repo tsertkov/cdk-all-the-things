@@ -4,7 +4,7 @@ Multi-region, multi-environment AWS CDK and Golang cloud application playground.
 
 ## Prerequisites
 
-Tools: make, nodejs, docker, aws-cli, awk, sed, xargs, [yq](https://github.com/mikefarah/yq)
+Tools: make, nodejs, docker, sops, aws-cli, awk, sed, xargs, [yq](https://github.com/mikefarah/yq)
 
 [age](https://github.com/FiloSottile/age) key (see [infra-bootstrap](./infra-bootstrap/README.md))
 
@@ -23,8 +23,8 @@ Commands:
 - `make ci` - build all
 - `make build-lambdas` - build lambdas
 - `make build-infra` - build infra deployer container image
-- `make secrets` - unencrypt secrets into plan text file
-- `make secrets-edit` - edit encrypted secrets file
+- `make secrets` - unencrypt secrets into plan text file with sops
+- `make secrets-edit` - edit encrypted secrets file with sops
 - `make secrets-aws-update` - set secrets in aws from unencrypted secrets
 - `make secrets-aws-delete` - delete secrets in aws set from unencrypted secrets
 - `make clean` - remove compiled lambdas and unencrypted secrets
