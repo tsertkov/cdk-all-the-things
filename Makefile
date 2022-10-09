@@ -46,8 +46,16 @@ ci: clean lambdas infra
 
 .PHONY: clean
 clean:
-	@rm -rf lambdas/*/bin/*
+	@$(MAKE) -s clean-lambdas
+	@$(MAKE) -s clean-secrets
+
+.PHONY: clean-secrets
+clean-secrets:
 	@rm -f $(key_file) secrets.yaml
+
+.PHONY: clean-lambdas
+clean-lambdas:
+	@rm -rf lambdas/*/bin/*
 
 $(key_file):
 	@aws secretsmanager describe-secret --secret-id $(project)/$(secret_name) > /dev/null
