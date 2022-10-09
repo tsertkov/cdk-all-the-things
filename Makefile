@@ -1,33 +1,33 @@
 # input params
 
-app := deployer
 stage := dev
+app := deployer
 region := *
 image_tag := latest
 
 # vars
 
-ifeq ($(shell test ! -f Dockerfile && echo -n yes),yes)
-	app_ext := js
-else
-	app_ext := ts
-endif
-
-apps ?= $(shell yq '.apps' config.yaml | sed 's/- //' | xargs)
-apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
-project ?= $(shell yq '.common.project' config.yaml)
-stacks := *-$(stage)-$(region)/$(app)
-infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
+image_name := infra
+image_platform := linux/amd64
+config_file := config.yaml
+secrets_sops_file := secrets.sops.yaml
+secrets_file := secrets.yaml
 secret_name := deployer/age-key
 key_file := key.txt
+stacks := *-$(stage)-$(region)/$(app)
+app_ext := $(shell test ! -f Dockerfile && echo js || echo ts)
+infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
+apps ?= $(shell yq '.apps' $(config_file) | sed 's/- //' | xargs)
+apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
+project ?= $(shell yq '.common.project' $(config_file))
 
-# tasks
+# functions
 
-all: lsa-all
+define iterate_apps
+	for app in $(apps); do $(MAKE) -s app=$$app $(1); done
+endef
 
-PHONY: lsa-all
-lsa-all:
-	@for app in $(apps); do $(MAKE) -s app=$$app lsa; done
+### list commands
 
 .PHONY: ls
 ls:
@@ -37,12 +37,28 @@ ls:
 lsa:
 	@$(infra_cmd) ls "**"
 
+PHONY: lsa-all
+lsa-all:
+	@$(call iterate_apps,lsa)
+
+### build commands
+
 PHONY: init
 init:
 	@cd infra && npm i
 
 .PHONY: ci
-ci: clean lambdas infra
+ci: clean build-lambdas build-infra
+
+.PHONY: build-lambdas
+build-lambdas:
+	@cd lambdas/go-app && make build
+
+.PHONY: build-infra
+build-infra:
+	@docker build --platform $(image_platform) -t $(image_name):$(image_tag) .
+
+### clean commands
 
 .PHONY: clean
 clean:
@@ -51,26 +67,28 @@ clean:
 
 .PHONY: clean-secrets
 clean-secrets:
-	@rm -f $(key_file) secrets.yaml
+	@rm -f $(key_file) $(secrets_file)
 
 .PHONY: clean-lambdas
 clean-lambdas:
 	@rm -rf lambdas/*/bin/*
 
+### secrets commands
+
 $(key_file):
 	@aws secretsmanager describe-secret --secret-id $(project)/$(secret_name) > /dev/null
 	@aws secretsmanager get-secret-value --secret-id $(project)/$(secret_name) --query SecretString --output text > $(key_file)
 
-.PHONY: secrets.yaml
-secrets.yaml: $(key_file)
-	@SOPS_AGE_KEY_FILE=$(key_file) sops -d secrets.sops.yaml > secrets.yaml
+.PHONY: $(secrets_file)
+$(secrets_file): $(key_file)
+	@SOPS_AGE_KEY_FILE=$(key_file) sops -d $(secrets_sops_file) > $(secrets_file)
 
 .PHONY: secrets
-secrets: secrets.yaml
+secrets: $(secrets_file)
 
-.PHONY: sops
-sops: $(key_file)
-	@SOPS_AGE_KEY_FILE=$(key_file) sops secrets.sops.yaml
+.PHONY: secrets-edit
+secrets-edit: $(key_file)
+	@SOPS_AGE_KEY_FILE=$(key_file) sops $(secrets_sops_file)
 	@$(MAKE) -s clean-secrets
 	@$(MAKE) -s secrets
 
@@ -82,22 +100,24 @@ secrets-aws-update: secrets
 secrets-aws-delete: secrets
 	@./infra/scripts/aws-secrets.sh delete "$(stage)" "$(app)" "$(region)"
 
-.PHONY: lambdas
-lambdas:
-	@cd lambdas/go-app && make build
-
-.PHONY: infra
-infra:
-	@docker build --platform linux/amd64 -t infra:$(image_tag) .
+### cdk commands
 
 .PHONY: diff
 diff: secrets
 	@$(infra_cmd) diff $(stacks)
 
+.PHONY: diff-all
+diff-all:
+	@$(call iterate_apps,diff)
+
 .PHONY: deploy
 deploy: secrets
 	@$(infra_cmd) deploy $(stacks)
 	@$(MAKE) -s secrets-aws-update
+
+.PHONY: deploy-all
+deploy-all:
+	@$(call iterate_apps,deploy)
 
 .PHONY: destroy
 destroy:
@@ -106,7 +126,7 @@ destroy:
 
 .PHONY: destroy-all
 destroy-all:
-	@for app in $(apps_r); do $(MAKE) -s app=$$app destroy; done
+	@$(call iterate_apps,destroy)
 
 .PHONY: metadata
 metadata:
@@ -121,4 +141,4 @@ outputs:
 
 .PHONY: outputs-all
 outputs-all:
-	@for app in $(apps); do $(MAKE) -s app=$$app outputs; done
+	@$(call iterate_apps,outputs)

@@ -12,30 +12,33 @@ Tools: make, nodejs, docker, aws-cli, awk, sed, xargs, [yq](https://github.com/m
 
 1) Clone `git` repo
 2) Install dependencies by running `make init`
-3) Run tasks with `make`
+3) Run commands with `make`
 
-Build commands:
+Commands:
 
-- `make all` - build all
-- `make lambdas` - build lambdas
-- `make infra` - build infra deployer container image
-- `make secrets` - unencrypt secrets.sops.yaml into secrets.yaml
-- `make sops` - edit encrypted secrets.sops.yaml file
-- `make secrets-aws-update` - set secrets in aws from secrets.yaml
-- `make secrets-aws-delete` - delete secrets in aws set from secrets.yaml
-- `make clean` - remove compiled lambdas and secrets
-
-CDK commands:
-
+- `make init` - install infra dependencies
 - `make ls` - list infra stacks for given region
 - `make lsa` - list infra stacks for all regions
 - `make lsa-all` - list all stacks for all apps
+- `make ci` - build all
+- `make build-lambdas` - build lambdas
+- `make build-infra` - build infra deployer container image
+- `make secrets` - unencrypt secrets into plan text file
+- `make secrets-edit` - edit encrypted secrets file
+- `make secrets-aws-update` - set secrets in aws from unencrypted secrets
+- `make secrets-aws-delete` - delete secrets in aws set from unencrypted secrets
+- `make clean` - remove compiled lambdas and unencrypted secrets
+- `make clean-secrets` - remove unencrypted secrets file
+- `make clean-lambdas` - remove compiled lambdas
 - `make diff` - diff infra changes
+- `make diff-all` - diff infra changes for all apps
 - `make deploy` - deploy infra & lambdas
+- `make deploy-all` - deploy infra & lambdas for all apps
 - `make outputs` - display stack outputs
 - `make outputs-all` - display stack outputs from all apps for given region
+- `make metadata` - show stacks metadata
 - `make destroy` - destroy stacks
-- `make app=be lsa` - list all stacks for be app
+- `make destroy-all` - destroy stacks from all apps
 
 ## Infrastructure environments
 
