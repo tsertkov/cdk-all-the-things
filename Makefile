@@ -22,6 +22,9 @@ infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
 apps ?= $(shell yq '.apps' $(config_file) | sed 's/- //' | xargs)
 apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
 project ?= $(shell yq '.common.project' $(config_file))
+sops_cmd := SOPS_AGE_KEY_FILE=$(key_file) sops
+aws_secrets_cmd := infra/scripts/aws-secrets.sh
+stack_outputs_cmd := infra/scripts/stack-outputs.sh
 
 # functions
 
@@ -107,7 +110,7 @@ $(key_file):
 
 .PHONY: $(secrets_file)
 $(secrets_file): $(key_file)
-	@SOPS_AGE_KEY_FILE=$(key_file) sops -d $(secrets_sops_file) > $(secrets_file)
+	@$(sops_cmd) -d $(secrets_sops_file) > $(secrets_file)
 
 .PHONY: secrets-decrypt
 secrets-decrypt: $(secrets_file)
@@ -115,19 +118,19 @@ secrets-decrypt: $(secrets_file)
 .PHONY: secrets-encrypt
 secrets-encrypt: $(key_file)
 	@test ! -f $(secrets_file) && echo $(secrets_file) does not exists && exit 1; \
-	SOPS_AGE_KEY_FILE=$(key_file) sops -e --age $(public_key) $(secrets_file) > $(secrets_sops_file)
+	$(sops_cmd) -e --age $(public_key) $(secrets_file) > $(secrets_sops_file)
 
 .PHONY: secrets-edit
 secrets-edit: $(key_file)
-	@SOPS_AGE_KEY_FILE=$(key_file) sops --age $(public_key) $(secrets_sops_file)
+	@$(sops_cmd) --age $(public_key) $(secrets_sops_file)
 
 .PHONY: secrets-aws-update
 secrets-aws-update: secrets-decrypt
-	@./infra/scripts/aws-secrets.sh update "$(stage)" "$(app)" "$(region)"
+	@$(aws_secrets_cmd) update "$(stage)" "$(app)" "$(region)"
 
 .PHONY: secrets-aws-delete
 secrets-aws-delete: secrets-decrypt
-	@./infra/scripts/aws-secrets.sh delete "$(stage)" "$(app)" "$(region)"
+	@$(aws_secrets_cmd) delete "$(stage)" "$(app)" "$(region)"
 
 ### cdk commands
 
@@ -165,7 +168,7 @@ metadata:
 outputs:
 	@for stack in $(shell $(infra_cmd) ls $(stacks) 2>/dev/null); do \
 		echo $$stack:; \
-		./infra/scripts/stack-outputs.sh $$stack; \
+		$(stack_outputs_cmd) $$stack; \
 	done
 
 .PHONY: outputs-all
