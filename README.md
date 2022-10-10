@@ -62,7 +62,7 @@ Cloud applications:
 - `be` - backend api app (multi-regional)
 - `fe` - frontend app (single-region)
 
-![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa drawio](https://user-images.githubusercontent.com/5339042/194942407-b3c1c0c5-1967-409a-b7c3-f3cf05522bcd.svg)
+![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa drawio (1)](https://user-images.githubusercontent.com/5339042/194943188-93bd70ae-7b05-4505-b149-3b922e76cbb1.svg)
 
 ## Containerized deployer
 
