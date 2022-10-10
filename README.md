@@ -50,7 +50,14 @@ Make commands:
 
 ## High level deployment digram
 
-![hl-deployment-diagram](https://user-images.githubusercontent.com/5339042/194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa.svg)
+Cloud applications:
+
+- `deployer` - cloud applcations deployer
+- `monitor-global` - global monitoring resources
+- `monitor` - regional monitoring resources
+- `be` - backend api application
+
+![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa (2)](https://user-images.githubusercontent.com/5339042/194930452-ecbb442b-56ac-4c62-8894-36356caa536b.svg)
 
 ## Infrastructure environments
 
