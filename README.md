@@ -48,6 +48,10 @@ Make commands:
 - `make destroy` - destroy stacks
 - `make destroy-all` - destroy stacks from all apps
 
+## High level deployment digram
+
+![hl-deployment-diagram](https://user-images.githubusercontent.com/5339042/194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa.svg)
+
 ## Infrastructure environments
 
 Stages and their environment configurations are defined under `stages` section in `config.yaml`.
