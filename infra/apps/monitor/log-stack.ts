@@ -62,7 +62,7 @@ export class LogStack extends NestedStackBase {
       this.config.project,
       this.config.stageName,
       regionToCode(this.config.globalRegion),
-      'monitor-global',
+      'monitor-gl',
       this.config.logsBucketName,
     ].join('-').toLowerCase() + '-' + Aws.ACCOUNT_ID
 
