@@ -61,7 +61,7 @@ Cloud applications:
 - `monitor` - monitor app (multi-regional)
 - `be` - backend api app (multi-regional)
 
-![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa (6)](https://user-images.githubusercontent.com/5339042/194939445-23c7ce0d-a5c5-45b2-b8a5-97afc3a4f2a9.svg)
+![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa (7)](https://user-images.githubusercontent.com/5339042/194939955-2add62f5-98ea-401b-b86a-2dd5fd947f61.svg)
 
 ## Containerized deployer
 
