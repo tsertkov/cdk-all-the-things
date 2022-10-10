@@ -52,9 +52,9 @@ Make commands:
 
 Stages and their environment configurations are defined under `stages` section in `config.yaml`.
 
-## High level deployment diagram
+## Apps deployment diagram
 
-Cloud applications:
+Cloud apps:
 
 - `deployer-gl` - apps deployer (single-region)
 - `monitor-gl` - monitor app (single-region)
