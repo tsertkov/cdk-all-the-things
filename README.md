@@ -48,20 +48,20 @@ Make commands:
 - `make destroy` - destroy stacks
 - `make destroy-all` - destroy stacks from all apps
 
-## High level deployment digram
-
-Cloud applications:
-
-- `deployer` - cloud applcations deployer
-- `monitor-global` - global monitoring resources
-- `monitor` - regional monitoring resources
-- `be` - backend api application
-
-![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa (2)](https://user-images.githubusercontent.com/5339042/194930452-ecbb442b-56ac-4c62-8894-36356caa536b.svg)
-
 ## Infrastructure environments
 
 Stages and their environment configurations are defined under `stages` section in `config.yaml`.
+
+## High level deployment diagram
+
+Cloud applications:
+
+- `deployer-gl` - apps deployer (single-region)
+- `monitor-gl` - monitor app (single-region)
+- `monitor` - monitor app (multi-regional)
+- `be` - backend api app (multi-regional)
+
+![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa (3)](https://user-images.githubusercontent.com/5339042/194937897-3df90c5a-b725-40fe-9828-5a1efcce81a0.svg)
 
 ## Containerized deployer
 
