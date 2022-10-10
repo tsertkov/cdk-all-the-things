@@ -1,7 +1,7 @@
 # input params
 
 stage := dev
-app := deployer
+app := deployer-gl
 region := *
 image_tag := latest
 

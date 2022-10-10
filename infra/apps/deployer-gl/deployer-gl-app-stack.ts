@@ -2,36 +2,36 @@ import { Construct } from 'constructs'
 import { deterministicName, setNameTag } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { StateStack } from './state-stack'
-import { DeployerStack } from './deployer-stack'
+import { DeployerGlStack } from './deployer-gl-stack'
 import { CfnOutput } from 'aws-cdk-lib'
-import { DeployerStageProps } from './deployer-config'
+import { DeployerGlStageProps } from './deployer-gl-config'
 
-export interface DeployerAppStackProps extends StackBaseProps {}
+export interface DeployerGlAppStackProps extends StackBaseProps {}
 
-export class DeployerAppStack extends StackBase {
-  protected readonly config: DeployerStageProps
+export class DeployerGlAppStack extends StackBase {
+  protected readonly config: DeployerGlStageProps
   stateStack: StateStack
-  deployerStack: DeployerStack
+  deployerStack: DeployerGlStack
 
-  constructor(scope: Construct, id: string, props: DeployerAppStackProps) {
+  constructor(scope: Construct, id: string, props: DeployerGlAppStackProps) {
     super(scope, id, props)
     this.initNestedStacks(props)
     this.initOutputs()
   }
 
-  private initNestedStacks(props: DeployerAppStackProps) {
+  private initNestedStacks(props: DeployerGlAppStackProps) {
     this.stateStack = new StateStack(this, 'State', {
       config: props.config,
     })
 
     setNameTag(this.stateStack, 'StateStack')
 
-    this.deployerStack = new DeployerStack(this, 'Deployer', {
+    this.deployerStack = new DeployerGlStack(this, 'Deployer', {
       config: props.config,
       stateStack: this.stateStack,
     })
 
-    setNameTag(this.deployerStack, 'DeployerStack')
+    setNameTag(this.deployerStack, 'DeployerGlStack')
   }
 
   private initOutputs() {

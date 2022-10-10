@@ -3,20 +3,20 @@ import { deterministicName, setNameTag } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { Aws, CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
-import { MonitorGlobalStageProps } from './monitor-global-config'
+import { MonitorGlStageProps } from './monitor-gl-config'
 
-export interface MonitorGlobalAppStackProps extends StackBaseProps {}
+export interface MonitorGlAppStackProps extends StackBaseProps {}
 
-export class MonitorGlobalAppStack extends StackBase {
-  protected readonly config: MonitorGlobalStageProps
+export class MonitorGlAppStack extends StackBase {
+  protected readonly config: MonitorGlStageProps
   logsBucket: Bucket
 
-  constructor(scope: Construct, id: string, props: MonitorGlobalAppStackProps) {
+  constructor(scope: Construct, id: string, props: MonitorGlAppStackProps) {
     super(scope, id, props)
     this.initLogsBucket()
     this.initOutputs()
 
-    setNameTag(this, 'MonitorGlobalAppStack')
+    setNameTag(this, 'MonitorGlAppStack')
   }
 
   private initLogsBucket () {

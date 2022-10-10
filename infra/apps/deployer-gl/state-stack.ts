@@ -4,14 +4,14 @@ import { FederatedPrincipal, PolicyStatement, Role } from 'aws-cdk-lib/aws-iam'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { Repository } from 'aws-cdk-lib/aws-ecr'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
-import { DeployerStageProps } from './deployer-config'
+import { DeployerGlStageProps } from './deployer-gl-config'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 
 export interface StateStackProps extends NestedStackBaseProps {
 }
 
 export class StateStack extends NestedStackBase {
-  protected readonly config: DeployerStageProps
+  protected readonly config: DeployerGlStageProps
   readonly githubOidcProviderArn: string
   ciRole: Role
   artifactsBucket: Bucket

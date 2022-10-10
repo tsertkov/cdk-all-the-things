@@ -2,19 +2,19 @@ import { Construct } from 'constructs'
 import { Aws } from 'aws-cdk-lib'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { StateStack } from './state-stack'
-import { DeployerStageProps } from './deployer-config'
+import { DeployerGlStageProps } from './deployer-gl-config'
 import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline'
 import { BuildSpec, LinuxBuildImage, PipelineProject } from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { Action, CodeBuildAction, ManualApprovalAction, S3SourceAction, S3Trigger } from 'aws-cdk-lib/aws-codepipeline-actions'
 import { regionToCode } from '../../lib/utils'
 
-export interface DeployerStackProps extends NestedStackBaseProps {
+export interface DeployerGlStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack
 }
 
-export class DeployerStack extends NestedStackBase {
-  protected readonly config: DeployerStageProps
+export class DeployerGlStack extends NestedStackBase {
+  protected readonly config: DeployerGlStageProps
   readonly stateStack: StateStack
   readonly githubOidcProviderArn: string
   readonly codePipelines: Pipeline[] = []
@@ -22,7 +22,7 @@ export class DeployerStack extends NestedStackBase {
   codeBuildRw: PipelineProject
   sdPipeline: Pipeline
 
-  constructor(scope: Construct, id: string, props: DeployerStackProps) {
+  constructor(scope: Construct, id: string, props: DeployerGlStackProps) {
     super(scope, id, props)
     this.stateStack = props.stateStack
 
@@ -36,14 +36,14 @@ export class DeployerStack extends NestedStackBase {
     this.config.appModules.forEach(appName => {
       this.codePipelines.push(
         this.initCodePipeline(
-          this.config.rootConfig.stageConfig(this.config.stageName, appName) as DeployerStageProps,
+          this.config.rootConfig.stageConfig(this.config.stageName, appName) as DeployerGlStageProps,
           this.config.noApprovalDeploy,
         )
       )
     })
   }
 
-  private initCodePipeline (props: DeployerStageProps, noApprovalDeploy: boolean): Pipeline {
+  private initCodePipeline (props: DeployerGlStageProps, noApprovalDeploy: boolean): Pipeline {
     // init deployment code pipeline for given app & regions
     const {
       project,

@@ -7,8 +7,8 @@ common:
     owner: Al
 
 apps:
-  - deployer
-  - monitor-global
+  - deployer-gl
+  - monitor-gl
   - monitor
   - be
 
@@ -20,19 +20,7 @@ stages:
     removalPolicy: destroy
     logRetentionDays: 7
 
-be:
-  common:
-    apiResourceName: api
-    monitorRegion: eu-central-1
-    regions:
-      - eu-central-1
-      - us-east-1
-  stages:
-    dev:
-      regions:
-        - eu-central-1
-
-deployer:
+deployer-gl:
   common:
     githubRepo: tsertkov/cdk-all-the-things
     githubOidcArnCfnOutput: GithubOidcArn
@@ -46,7 +34,7 @@ deployer:
     prd:
       promotionSrc: stg
 
-monitor-global:
+monitor-gl:
   common:
     logsBucketName: logs-eeb9aW
     regions:
@@ -56,6 +44,17 @@ monitor:
   common:
     logsBucketName: logs-eeb9aW
     globalRegion: eu-central-1
+    regions:
+      - eu-central-1
+      - us-east-1
+  stages:
+    dev:
+      regions:
+        - eu-central-1
+be:
+  common:
+    apiResourceName: api
+    monitorRegion: eu-central-1
     regions:
       - eu-central-1
       - us-east-1

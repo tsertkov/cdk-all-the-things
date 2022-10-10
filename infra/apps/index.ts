@@ -1,11 +1,11 @@
-import be from './be'
-import deployer from './deployer'
-import monitorGlobal from './monitor-global'
+import deployerGl from './deployer-gl'
+import monitorGl from './monitor-gl'
 import monitor from './monitor'
+import be from './be'
 
 export default {
-  be,
-  deployer,
+  'deployer-gl': deployerGl,
+  'monitor-gl': monitorGl,
   monitor,
-  'monitor-global': monitorGlobal,
+  be,
 }
