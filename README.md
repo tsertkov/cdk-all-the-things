@@ -13,6 +13,7 @@ Bootstrapping:
 - `git clone ...` - Clone this git repo
 - Edit configuration parameters in `config.yaml`
 - `make init` - Install dependencies
+- `make bootstrap-cdk` - Bootstrap cdk for all apps regions
 - `make bootstrap-github-oidc` - Optionally bootstrap github oidc if Github Actions are used for deployments
 - `make bootstrap-secret-key` - Generage age secret key and store it in the cloud
 - `cp secrets-example.yaml secrets.yaml && make secrets-encrypt` - Encrypt provided example secrets
@@ -20,6 +21,7 @@ Bootstrapping:
 Make commands:
 
 - `make init` - install infra dependencies
+- `make bootstrap-cdk` - bootstrap cdk for all apps regions
 - `make bootstrap-github-oidc` - deploy cfn stack with github oidc
 - `make bootstrap-secret-key` - generate age secret key and store it in the cloud
 - `make ls` - list infra stacks for given region

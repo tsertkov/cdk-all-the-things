@@ -22,6 +22,8 @@ infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
 apps ?= $(shell yq '.apps' $(config_file) | sed 's/- //' | xargs)
 apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
 project ?= $(shell yq '.common.project' $(config_file))
+all_regions ?= $(shell yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' config.yaml | sort | uniq)
+aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output text)
 sops_cmd := SOPS_AGE_KEY_FILE=$(key_file) sops
 aws_secrets_cmd := infra/scripts/aws-secrets.sh
 stack_outputs_cmd := infra/scripts/stack-outputs.sh
@@ -51,6 +53,12 @@ lsa-all:
 PHONY: init
 init:
 	@cd infra && npm i
+
+.PHONY: bootstrap-cdk
+bootstrap-cdk:
+	@cd infra && for region in $(all_regions); do \
+		echo $(aws_account_id)/$$region; \
+	done | xargs npx cdk bootstrap
 
 .PHONY: bootstrap-github-oidc
 bootstrap-github-oidc:
