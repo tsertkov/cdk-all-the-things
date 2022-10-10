@@ -60,8 +60,9 @@ Cloud applications:
 - `monitor-gl` - monitor app (single-region)
 - `monitor` - monitor app (multi-regional)
 - `be` - backend api app (multi-regional)
+- `fe` - frontend app (single-region)
 
-![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa (7)](https://user-images.githubusercontent.com/5339042/194939955-2add62f5-98ea-401b-b86a-2dd5fd947f61.svg)
+![194919832-e85ef35f-11ec-4da0-8b58-3869531f7faa drawio](https://user-images.githubusercontent.com/5339042/194942407-b3c1c0c5-1967-409a-b7c3-f3cf05522bcd.svg)
 
 ## Containerized deployer
 
