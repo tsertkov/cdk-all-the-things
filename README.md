@@ -61,7 +61,7 @@ Automated pipelines use deployer container image to execute deployments.
 % make lambdas infra
 
 # run simple command
-% docker run --rm -it infra lsall
+% docker run --rm -it infra lsa-all
 
 # run command with AWS access
 % docker run --rm -it \
@@ -71,6 +71,6 @@ Automated pipelines use deployer container image to execute deployments.
 
 # run command with custom config file
 % docker run --rm -it \
-    -v $PWD/config.toml:/app/config.toml \
+    -v $PWD/config.yaml:/app/config.yaml \
     infra app=be lsa
 ```
