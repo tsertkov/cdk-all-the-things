@@ -17,24 +17,24 @@ jobs:
       environment: stg
     secrets: inherit
 
-  stg-deployer:
+  stg-deployer-gl:
     needs:
       - version
       - dev-to-stg
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: deployer
+      app: deployer-gl
       environment: stg
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  stg-monitor-global:
+  stg-monitor-gl:
     needs:
       - version
-      - stg-deployer
+      - stg-deployer-gl
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: monitor-global
+      app: monitor-gl
       environment: stg
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
@@ -42,7 +42,7 @@ jobs:
   stg-monitor:
     needs:
       - version
-      - stg-monitor-global
+      - stg-monitor-gl
     uses: ./.github/workflows/deploy-stage.yaml
     with:
       app: monitor
@@ -75,24 +75,24 @@ jobs:
       environment: prd
     secrets: inherit
 
-  prd-deployer:
+  prd-deployer-gl:
     needs:
       - version
       - stg-to-prd
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: deployer
+      app: deployer-gl
       environment: prd
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  prd-monitor-global:
+  prd-monitor-gl:
     needs:
       - version
       - prd-deployer
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: monitor-global
+      app: monitor-gl
       environment: prd
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
