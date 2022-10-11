@@ -8,7 +8,9 @@ Tools: make, nodejs, docker, sops, aws-cli, awk, sed, xargs, [yq](https://github
 
 ## Usage
 
-Bootstrapping:
+Follow bootstrapping instructions to prepare local and aws environment. Use make commands to run operations.
+
+### Bootstrapping
 
 - `git clone ...` - Clone this git repo
 - Edit configuration parameters in `config.yaml`
@@ -18,33 +20,56 @@ Bootstrapping:
 - `make bootstrap-secret-key` - Generage age secret key and store it in the cloud
 - `cp secrets-example.yaml secrets.yaml && make secrets-encrypt` - Encrypt provided example secrets
 
-Make commands:
+### Make commands
+
+Bootstrap commands:
 
 - `make init` - install infra dependencies
 - `make bootstrap-cdk` - bootstrap cdk for all apps regions
 - `make bootstrap-github-oidc` - deploy cfn stack with github oidc
 - `make bootstrap-secret-key` - generate age secret key and store it in the cloud
+
+App stack list commands:
+
 - `make ls` - list infra stacks for given region
 - `make lsa` - list infra stacks for all regions
 - `make lsa-all` - list all stacks for all apps
+- `make metadata` - show stacks metadata
+
+Build commands:
+
 - `make ci` - build all
 - `make build-lambdas` - build lambdas
 - `make build-infra` - build infra deployer container image
+- `make clean` - remove compiled lambdas and decrypted secrets
+- `make clean-secrets` - remove decrypted secrets file
+- `make clean-lambdas` - remove compiled lambdas
+
+Secrets commands:
+
 - `make secrets-decrypt` - decrypt secrets into plan text file
 - `make secrets-encrypt` - encrypt secrets from plan text file
 - `make secrets-edit` - edit encrypted secrets file or create new
 - `make secrets-aws-update` - set secrets in aws from decrypted secrets
 - `make secrets-aws-delete` - delete secrets in aws set from decrypted secrets
-- `make clean` - remove compiled lambdas and decrypted secrets
-- `make clean-secrets` - remove decrypted secrets file
-- `make clean-lambdas` - remove compiled lambdas
+
+Cdk diff commands:
+
 - `make diff` - diff infra changes
 - `make diff-all` - diff infra changes for all apps
+
+Cdk deploy commands:
+
 - `make deploy` - deploy infra & lambdas
 - `make deploy-all` - deploy infra & lambdas for all apps
+
+Cloudformation outputs:
+
 - `make outputs` - display stack outputs
 - `make outputs-all` - display stack outputs from all apps for given region
-- `make metadata` - show stacks metadata
+
+Cdk destroy commands:
+
 - `make destroy` - destroy stacks
 - `make destroy-all` - destroy stacks from all apps
 
@@ -52,7 +77,7 @@ Make commands:
 
 Stages and their environment configurations are defined under `stages` section in `config.yaml`.
 
-## Apps deployment diagram
+## App suite deployment diagram
 
 Cloud apps:
 

@@ -1,16 +1,18 @@
-common:
-  project: CdkATT
-  removalPolicy: retain
-  logRetentionDays: 90
-  tracingEnabled: false
-  tags:
-    owner: Al
+project: CdkATT
 
 apps:
   - deployer-gl
   - monitor-gl
   - monitor
   - be
+  - fe
+
+common:
+  removalPolicy: retain
+  logRetentionDays: 90
+  tracingEnabled: false
+  tags:
+    owner: Al
 
 stages:
   prd:
@@ -51,6 +53,7 @@ monitor:
     dev:
       regions:
         - eu-central-1
+
 be:
   common:
     apiResourceName: api
@@ -62,3 +65,8 @@ be:
     dev:
       regions:
         - eu-central-1
+
+fe:
+  common:
+    regions:
+      - eu-central-1

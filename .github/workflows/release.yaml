@@ -61,6 +61,17 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
+  stg-fe:
+    needs:
+      - version
+      - stg-be
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: fe
+      environment: stg
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
   stg-to-prd:
     needs:
       - version
@@ -115,6 +126,17 @@ jobs:
     uses: ./.github/workflows/deploy-stage.yaml
     with:
       app: be
+      environment: prd
+      version: ${{ needs.version.outputs.version }}
+    secrets: inherit
+
+  prd-fe:
+    needs:
+      - version
+      - prd-be
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: fe
       environment: prd
       version: ${{ needs.version.outputs.version }}
     secrets: inherit

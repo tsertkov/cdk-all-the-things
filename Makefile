@@ -21,7 +21,7 @@ app_ext := $(shell test ! -f Dockerfile && echo js || echo ts)
 infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
 apps ?= $(shell yq '.apps' $(config_file) | sed 's/- //' | xargs)
 apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
-project ?= $(shell yq '.common.project' $(config_file))
+project ?= $(shell yq '.project' $(config_file))
 all_regions ?= $(shell yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' config.yaml | sort | uniq)
 aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output text)
 sops_cmd := SOPS_AGE_KEY_FILE=$(key_file) sops

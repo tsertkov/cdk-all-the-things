@@ -19,6 +19,7 @@ export interface StageProps {
 interface RawConfig {
   readonly common: Record<string, any>
   readonly stages: Record<string, any>
+  readonly project: string
 }
 
 export class Config {
@@ -40,7 +41,9 @@ export class Config {
   stageConfig (stageName: string, appName: string): StageProps {
     // merge common config with common stage config
     const config = Object.assign(
-      {},
+      {
+        project: this.rawConfig.project,
+      },
       this.rawConfig.common,
       this.rawConfig.stages[stageName],
     )
@@ -61,7 +64,7 @@ export class Config {
     )
 
     // merge result config with app config and app stage config
-    const appConfig = this.rawConfig[appName as keyof RawConfig]
+    const appConfig = this.rawConfig[appName as keyof RawConfig] as Record<string, any>
     if (appConfig) {
       if (appConfig.common) {
         Object.assign(config, appConfig.common)

@@ -67,3 +67,14 @@ jobs:
       environment: ${{ inputs.environment || 'dev' }}
       version: ${{ needs.deployer-image.outputs.version }}
     secrets: inherit
+
+  fe:
+    needs:
+      - deployer-image
+      - be
+    uses: ./.github/workflows/deploy-stage.yaml
+    with:
+      app: fe
+      environment: ${{ inputs.environment || 'dev' }}
+      version: ${{ needs.deployer-image.outputs.version }}
+    secrets: inherit
