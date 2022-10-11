@@ -77,9 +77,9 @@ Cdk destroy commands:
 
 Stages and their environment configurations are defined under `stages` section in `config.yaml`.
 
-## App suite deployment diagram
+## App suite
 
-Cloud apps:
+Apps in the suite:
 
 - `deployer-gl` - apps deployer (single-region)
 - `monitor-gl` - monitor app (single-region)
@@ -87,7 +87,13 @@ Cloud apps:
 - `be` - backend api app (multi-regional)
 - `fe` - frontend app (single-region)
 
-![194943188-93bd70ae-7b05-4505-b149-3b922e76cbb1 drawio (2)](https://user-images.githubusercontent.com/5339042/194963466-5958ac32-8de8-4d9e-8986-29c06a9201a2.svg)
+### App suite deployment diagram
+
+![app suite deployment diagram](https://user-images.githubusercontent.com/5339042/194963466-5958ac32-8de8-4d9e-8986-29c06a9201a2.svg)
+
+### Deployer architecture
+
+![deployer architecture](https://user-images.githubusercontent.com/5339042/195130240-34e0f207-c5ad-4220-939f-a6e54605c6cc.svg)
 
 ## Containerized deployer
 
