@@ -13,7 +13,7 @@ region=
 
 echo $operation secrets for $stage-$app
 
-project="$(yq ".common.project" config.yaml)"
+project="$(yq ".project" config.yaml)"
 regions="$(yq ".${app}.stages.${stage}.regions // .${app}.common.regions" config.yaml | sed "s/- //")"
 secrets="$(yq ".${app}.stages.${stage}.secrets // .${app}.common.secrets" secrets.yaml)"
 
