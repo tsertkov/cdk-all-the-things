@@ -73,25 +73,32 @@ Cdk destroy commands:
 - `make destroy` - destroy stacks
 - `make destroy-all` - destroy stacks from all apps
 
-## Infrastructure environments
+## Environments
 
 Stages and their environment configurations are defined under `stages` section in `config.yaml`.
 
-## App suite
+## Applications
 
-Apps in the suite:
+System apps:
 
-- `deployer-gl` - apps deployer (single-region)
-- `monitor-gl` - monitor app (single-region)
-- `monitor` - monitor app (multi-regional)
-- `be` - backend api app (multi-regional)
+- `deployer-glb` - apps deployer (single-region)
+- `monitor-glb` - monitor app (single-region)
+- `monitor` - monitor app (multi-region)
+
+User apps:
+
+- `be` - backend api app (multi-region)
 - `fe` - frontend app (single-region)
 
-### App suite deployment diagram
+### Deployment
 
-![app suite deployment diagram](https://user-images.githubusercontent.com/5339042/194963466-5958ac32-8de8-4d9e-8986-29c06a9201a2.svg)
+Deployer-glb application deploys all other applications including self updates.
+
+![applications deployment](https://user-images.githubusercontent.com/5339042/194963466-5958ac32-8de8-4d9e-8986-29c06a9201a2.svg)
 
 ### Deployer architecture
+
+Main job of deployer is to run CloudFormation stack updates. It uses CodeBuild to trigger updates and CodePipeline to orchestrate the flow.
 
 ![deployer architecture](https://user-images.githubusercontent.com/5339042/195130240-34e0f207-c5ad-4220-939f-a6e54605c6cc.svg)
 
