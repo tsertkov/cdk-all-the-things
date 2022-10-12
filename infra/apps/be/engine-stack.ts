@@ -52,8 +52,6 @@ export class EngineStack extends NestedStackBase {
       },
     })
 
-    setNameTag(this.engineLambda, 'EngineLambda')
-
     this.engineLambdaAlias = new Alias(this, 'EngineLambdaAlias', {
       aliasName: 'live',
       version: this.engineLambda.currentVersion,

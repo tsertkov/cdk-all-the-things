@@ -15,8 +15,6 @@ export class FeAppStack extends StackBase {
     super(scope, id, props)
     this.initWebBucket()
     this.initOutputs()
-
-    setNameTag(this, 'FeAppStack')
   }
 
   private initWebBucket () {

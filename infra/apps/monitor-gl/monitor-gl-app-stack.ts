@@ -15,8 +15,6 @@ export class MonitorGlAppStack extends StackBase {
     super(scope, id, props)
     this.initLogsBucket()
     this.initOutputs()
-
-    setNameTag(this, 'MonitorGlAppStack')
   }
 
   private initLogsBucket () {

@@ -50,8 +50,6 @@ export class ApiStack extends NestedStackBase {
         accessLogFormat: AccessLogFormat.jsonWithStandardFields(),
       },
     })
-
-    setNameTag(this.restApi, 'RestApi')
   }
 
   private initApiLambda () {
@@ -73,8 +71,6 @@ export class ApiStack extends NestedStackBase {
         REGION_NAME: this.region,
       },
     })
-
-    setNameTag(this.apiLambda, 'ApiLambda')
 
     // allow lambda to send sqs messages into job queue
     this.jobQueue.grantSendMessages(this.apiLambda)

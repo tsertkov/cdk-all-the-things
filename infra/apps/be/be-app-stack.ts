@@ -31,28 +31,20 @@ export class BeAppStack extends StackBase {
       config: this.config,
     })
 
-    setNameTag(this.engineStateStack, 'EngineStateStack')
-
     this.engineStack = new EngineStack(this, 'Engine', {
       config: this.config,
       engineStateStack: this.engineStateStack,
     })
 
-    setNameTag(this.engineStack, 'EngineStack')
-
     this.apiStateStack = new ApiStateStack(this, 'ApiState', {
       config: this.config,
     })
-
-    setNameTag(this.apiStateStack, 'ApiStateStack')
 
     this.apiStack = new ApiStack(this, 'Api', {
       config: this.config,
       engineStateStack: this.engineStateStack,
       apiStateStack: this.apiStateStack,
     })
-
-    setNameTag(this.apiStack, 'ApiStack')
 
     this.monitorStack = new MonitorStack(this, 'Monitor', {
       config: this.config,
@@ -63,8 +55,6 @@ export class BeAppStack extends StackBase {
         this.engineStack.engineLambda.logGroup.logGroupName,
       ],
     })
-
-    setNameTag(this.monitorStack, 'MonitorStack')
   }
 
   private initOutputs() {

@@ -1,7 +1,6 @@
 import { Construct } from 'constructs'
 import { Table, AttributeType } from 'aws-cdk-lib/aws-dynamodb'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
-import { setNameTag } from '../../lib/utils'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { BeStageProps } from './be-config'
 
@@ -25,7 +24,6 @@ export class ApiStateStack extends NestedStackBase {
       retention: this.config.logRetentionDays,
       removalPolicy: this.config.removalPolicy,
     })
-    setNameTag(this.restApiLogGroup, 'RestApiLogGroup')
   }
 
   private initJobTable () {
@@ -36,7 +34,5 @@ export class ApiStateStack extends NestedStackBase {
         type: AttributeType.STRING,
       },
     })
-
-    setNameTag(this.jobTable, 'JobTable')
   }
 }

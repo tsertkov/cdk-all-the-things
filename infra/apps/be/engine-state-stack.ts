@@ -1,6 +1,5 @@
 import { Construct } from 'constructs'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
-import { setNameTag } from '../../lib/utils'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { BeStageProps } from './be-config'
 
@@ -25,8 +24,5 @@ export class EngineStateStack extends NestedStackBase {
         maxReceiveCount: 3,
       }
     })
-
-    setNameTag(this.jobQueueDlq, 'JobQueueDlq')
-    setNameTag(this.jobQueue, 'JobQueue')
   }
 }

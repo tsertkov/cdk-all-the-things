@@ -22,14 +22,10 @@ export class MonitorAppStack extends StackBase {
       config: props.config,
     })
 
-    setNameTag(this.stateStack, 'StateStack')
-
     this.logStack = new LogStack(this, 'Log', {
       config: props.config,
       stateStack: this.stateStack,
     })
-
-    setNameTag(this.logStack, 'LogStack')
   }
 
   private initOutputs() {

@@ -24,14 +24,10 @@ export class DeployerGlAppStack extends StackBase {
       config: props.config,
     })
 
-    setNameTag(this.stateStack, 'StateStack')
-
     this.deployerStack = new DeployerGlStack(this, 'Deployer', {
       config: props.config,
       stateStack: this.stateStack,
     })
-
-    setNameTag(this.deployerStack, 'DeployerGlStack')
   }
 
   private initOutputs() {
