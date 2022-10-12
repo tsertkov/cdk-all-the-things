@@ -100,7 +100,7 @@ Deployer-glb application deploys all other applications including self updates.
 
 Main job of deployer is to run CloudFormation stack updates. It uses CodeBuild to trigger updates and CodePipeline to orchestrate the flow.
 
-![deployer architecture](https://user-images.githubusercontent.com/5339042/195130240-34e0f207-c5ad-4220-939f-a6e54605c6cc.svg)
+![deployer architecture](https://user-images.githubusercontent.com/5339042/195419705-4b1d9b33-441b-41a3-8eda-ee4ba7475634.svg)
 
 ## Containerized deployer
 
