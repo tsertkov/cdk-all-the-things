@@ -1,4 +1,4 @@
-import { Aws, Fn, RemovalPolicy } from 'aws-cdk-lib'
+import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { FederatedPrincipal, PolicyStatement, Role } from 'aws-cdk-lib/aws-iam'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
@@ -6,12 +6,13 @@ import { Repository } from 'aws-cdk-lib/aws-ecr'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { DeployerGlStageProps } from './deployer-gl-config'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
+import { deterministicName } from '../../lib/utils'
 
 export interface StateStackProps extends NestedStackBaseProps {
 }
 
 export class StateStack extends NestedStackBase {
-  protected readonly config: DeployerGlStageProps
+  readonly config: DeployerGlStageProps
   readonly githubOidcProviderArn: string
   ciRole: Role
   artifactsBucket: Bucket
@@ -64,7 +65,13 @@ export class StateStack extends NestedStackBase {
         'codepipeline:GetPipelineExecution',
         'codepipeline:StopPipelineExecution',
       ],
-      resources: [ `arn:${this.partition}:codepipeline:${this.region}:${Aws.ACCOUNT_ID}:${pipelineName}` ],
+      resources: [
+        Arn.format({
+          service: 'codepipeline',
+          arnFormat: ArnFormat.NO_RESOURCE_NAME,
+          resource: pipelineName,
+        }, this),
+      ],
     }))
 
     this.deployerEcrRepo.grantPullPush(this.ciRole)
@@ -78,7 +85,11 @@ export class StateStack extends NestedStackBase {
           'ecr:GetDownloadUrlForLayer',
         ],
         resources: [
-          `arn:${this.partition}:ecr:${this.region}:${Aws.ACCOUNT_ID}:repository/${this.deployerRepoName(this.config.promotionSrc)}`,
+          Arn.format({
+            service: 'ecr',
+            resource: 'repository',
+            resourceName: this.deployerRepoName(this.config.promotionSrc),
+          }, this),
         ],
       }))
     }
@@ -101,10 +112,11 @@ export class StateStack extends NestedStackBase {
   }
 
   private deployerRepoName(stageName: string) {
-    return [
-      this.config.project.toLowerCase(),
-      stageName,
-      'deployer',
-    ].join('-')
+    return deterministicName({
+      stage: stageName,
+      name: 'deployer',
+      region: null,
+      app: null,
+    }, this).toLowerCase()
   }
 }

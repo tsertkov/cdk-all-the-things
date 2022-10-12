@@ -1,6 +1,6 @@
 import { CfnOutput } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { deterministicName, setNameTag } from '../../lib/utils'
+import { deterministicName } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { MonitorStack } from '../../lib/monitor-stack'
 import { ApiStack } from './api-stack'
@@ -12,7 +12,7 @@ import { BeStageProps } from './be-config'
 export interface BeAppStackProps extends StackBaseProps {}
 
 export class BeAppStack extends StackBase {
-  protected readonly config: BeStageProps
+  readonly config: BeStageProps
   engineStack: EngineStack
   engineStateStack: EngineStateStack
   apiStack: ApiStack
@@ -60,7 +60,7 @@ export class BeAppStack extends StackBase {
   private initOutputs() {
     new CfnOutput(this, 'RestApiEndpoint', {
       value: this.apiStack.restApi.url,
-      exportName: deterministicName(this, 'RestApiEndpoint'),
+      exportName: deterministicName({ name: 'RestApiEndpoint' }, this),
     })
   }
 }

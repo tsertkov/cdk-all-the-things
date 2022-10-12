@@ -1,7 +1,7 @@
 import { Construct } from 'constructs'
 import { Stage, StageProps } from 'aws-cdk-lib'
 import { StageProps as StageConfigProps } from './config'
-import { regionToCode } from './utils'
+import { deterministicName } from './utils'
 import { StackBase } from './stack-base'
 
 export interface AppStageProps {
@@ -37,6 +37,9 @@ function stageIdFromProps (props: AppStageProps): string {
     throw new Error('Region must be specified')
   }
 
-  const regionCode = regionToCode(region)
-  return `${project}-${stageName}-${regionCode}`
+  return deterministicName({
+    project,
+    stage: stageName,
+    region,
+  })
 }

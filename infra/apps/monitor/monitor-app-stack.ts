@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { deterministicName, setNameTag } from '../../lib/utils'
+import { deterministicName } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { StateStack } from './state-stack'
 import { LogStack } from './log-stack'
@@ -31,7 +31,7 @@ export class MonitorAppStack extends StackBase {
   private initOutputs() {
     new CfnOutput(this, 'LogDeliveryStreamArn', {
       value: this.logStack.deliveryStream.attrArn,
-      exportName: deterministicName(this, 'LogDeliveryStreamArn'),
+      exportName: deterministicName({ name: 'LogDeliveryStreamArn' }, this),
     })
   }
 }

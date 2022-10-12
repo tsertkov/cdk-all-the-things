@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { Aws } from 'aws-cdk-lib'
+import { Arn, ArnFormat, Aws } from 'aws-cdk-lib'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { StateStack } from './state-stack'
 import { DeployerGlStageProps } from './deployer-gl-config'
@@ -7,14 +7,14 @@ import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline'
 import { BuildSpec, LinuxBuildImage, PipelineProject } from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { Action, CodeBuildAction, ManualApprovalAction, S3SourceAction, S3Trigger } from 'aws-cdk-lib/aws-codepipeline-actions'
-import { regionToCode } from '../../lib/utils'
+import { deterministicName, regionToCode } from '../../lib/utils'
 
 export interface DeployerGlStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack
 }
 
 export class DeployerGlStack extends NestedStackBase {
-  protected readonly config: DeployerGlStageProps
+  readonly config: DeployerGlStageProps
   readonly stateStack: StateStack
   readonly githubOidcProviderArn: string
   readonly codePipelines: Pipeline[] = []
@@ -140,7 +140,11 @@ export class DeployerGlStack extends NestedStackBase {
   }
 
   private createCodeBuild(rw: boolean) {
-    const projectName = `${this.config.project}-${this.config.appName}-${this.config.stageName}-${rw ? 'rw' : 'ro'}`
+    const projectName = deterministicName({
+      region: null,
+      append: rw ? 'rw' : 'ro',
+    }, this)
+
     const codeBuild = new PipelineProject(this, `CodeBuild-${rw ? 'rw' : 'ro'}`, {
       projectName,
       logging: {
@@ -201,8 +205,12 @@ export class DeployerGlStack extends NestedStackBase {
       actions: [ 'sts:AssumeRole' ],
       resources: cdkRoleTypes
         .map(type =>
-          `arn:${this.partition}:iam::${Aws.ACCOUNT_ID}:`
-          + `role/cdk-hnb659fds-${type}-role-${Aws.ACCOUNT_ID}-*`
+          Arn.format({
+            region: '',
+            service: 'iam',
+            resource: 'role',
+            resourceName: `cdk-hnb659fds-${type}-role-${Aws.ACCOUNT_ID}-*`,
+          }, this)
         ),
     }))
 
@@ -213,11 +221,12 @@ export class DeployerGlStack extends NestedStackBase {
         'secretsmanager:DescribeSecret',
       ],
       resources: [
-        [
-          `arn:${this.partition}:secretsmanager:${this.region}:`,
-          `${Aws.ACCOUNT_ID}:secret:`,
-          `${this.config.project}/${this.config.appName}/*`,
-        ].join(''),
+        Arn.format({
+          service: 'secretsmanager',
+          resource: 'secret',
+          arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+          resourceName: `${this.config.project}/age-key`,
+        }, this),
       ],
     }))
 
@@ -235,11 +244,13 @@ export class DeployerGlStack extends NestedStackBase {
           'secretsmanager:CreateSecret',
         ],
         resources: [
-          [
-            `arn:${this.partition}:secretsmanager:*:`,
-            `${Aws.ACCOUNT_ID}:secret:`,
-            `${this.config.project}/${this.config.stageName}/*`,
-          ].join(''),
+          Arn.format({
+            region: '*',
+            service: 'secretsmanager',
+            resource: 'secret',
+            arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+            resourceName: `${this.config.project}/${this.config.stageName}/*`,
+          }, this),
         ],
       }))
     }

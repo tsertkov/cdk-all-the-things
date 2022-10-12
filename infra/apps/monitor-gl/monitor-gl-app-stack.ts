@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { deterministicName, setNameTag } from '../../lib/utils'
+import { deterministicName } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { Aws, CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
@@ -8,7 +8,7 @@ import { MonitorGlStageProps } from './monitor-gl-config'
 export interface MonitorGlAppStackProps extends StackBaseProps {}
 
 export class MonitorGlAppStack extends StackBase {
-  protected readonly config: MonitorGlStageProps
+  readonly config: MonitorGlStageProps
   logsBucket: Bucket
 
   constructor(scope: Construct, id: string, props: MonitorGlAppStackProps) {
@@ -19,8 +19,12 @@ export class MonitorGlAppStack extends StackBase {
 
   private initLogsBucket () {
     const autoDeleteObjects = this.config.removalPolicy === RemovalPolicy.DESTROY
-    const bucketName = deterministicName(this, this.config.logsBucketName)
-      .toLowerCase() + '-' + Aws.ACCOUNT_ID
+
+    const bucketName = deterministicName({
+      name: this.config.logsBucketName,
+      app: null,
+      region: null,
+    }, this).toLowerCase() + '-' + Aws.ACCOUNT_ID
 
     this.logsBucket = new Bucket(this, 'LogsBucket', {
       bucketName,
@@ -32,7 +36,7 @@ export class MonitorGlAppStack extends StackBase {
   private initOutputs() {
     new CfnOutput(this, 'LogsBucketName', {
       value: this.logsBucket.bucketName,
-      exportName: deterministicName(this, 'LogsBucketName'),
+      exportName: deterministicName({ name: 'LogsBucketName' }, this),
     })
   }
 }

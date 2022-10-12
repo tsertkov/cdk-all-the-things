@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { deterministicName, setNameTag } from '../../lib/utils'
+import { deterministicName } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
@@ -8,7 +8,7 @@ import { FeStageProps } from './fe-config'
 export interface FeAppStackProps extends StackBaseProps {}
 
 export class FeAppStack extends StackBase {
-  protected readonly config: FeStageProps
+  readonly config: FeStageProps
   webBucket: Bucket
 
   constructor(scope: Construct, id: string, props: FeAppStackProps) {
@@ -29,7 +29,7 @@ export class FeAppStack extends StackBase {
   private initOutputs() {
     new CfnOutput(this, 'WebBucketName', {
       value: this.webBucket.bucketName,
-      exportName: deterministicName(this, 'WebBucketName'),
+      exportName: deterministicName({ name: 'WebBucketName' }, this),
     })
   }
 }

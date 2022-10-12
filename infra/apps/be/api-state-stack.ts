@@ -8,7 +8,7 @@ export interface ApiStateStackProps extends NestedStackBaseProps {
 }
 
 export class ApiStateStack extends NestedStackBase {
-  protected readonly config: BeStageProps
+  readonly config: BeStageProps
   jobTable: Table
   restApiLogGroup: LogGroup
 

@@ -8,7 +8,7 @@ export interface StackBaseProps {
 }
 
 export class StackBase extends Stack {
-  protected readonly config: StageProps
+  readonly config: StageProps
 
   constructor(scope: Construct, id: string, props: StackBaseProps) {
     super(scope, id, props.stackProps)

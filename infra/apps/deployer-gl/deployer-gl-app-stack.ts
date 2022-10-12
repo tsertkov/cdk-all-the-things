@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { deterministicName, setNameTag } from '../../lib/utils'
+import { deterministicName } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { StateStack } from './state-stack'
 import { DeployerGlStack } from './deployer-gl-stack'
@@ -9,7 +9,7 @@ import { DeployerGlStageProps } from './deployer-gl-config'
 export interface DeployerGlAppStackProps extends StackBaseProps {}
 
 export class DeployerGlAppStack extends StackBase {
-  protected readonly config: DeployerGlStageProps
+  readonly config: DeployerGlStageProps
   stateStack: StateStack
   deployerStack: DeployerGlStack
 
@@ -33,17 +33,17 @@ export class DeployerGlAppStack extends StackBase {
   private initOutputs() {
     new CfnOutput(this, 'CiRoleName', {
       value: this.stateStack.ciRole.roleName,
-      exportName: deterministicName(this, 'CiRoleName'),
+      exportName: deterministicName({ name: 'CiRoleName' }, this),
     })
 
     new CfnOutput(this, 'DeployerEcrRepoUri', {
       value: this.stateStack.deployerEcrRepo.repositoryUri,
-      exportName: deterministicName(this, 'DeployerEcrRepoUri'),
+      exportName: deterministicName({ name: 'DeployerEcrRepoUri' }, this),
     })
 
     new CfnOutput(this, 'ArtifactsBucketName', {
       value: this.stateStack.artifactsBucket.bucketName,
-      exportName: deterministicName(this, 'ArtifactsBucketName'),
+      exportName: deterministicName({ name: 'ArtifactsBucketName' }, this),
     })
   }
 }

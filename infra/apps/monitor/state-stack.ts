@@ -8,7 +8,7 @@ export interface StateStackProps extends NestedStackBaseProps {
 }
 
 export class StateStack extends NestedStackBase {
-  protected readonly config: MonitorStageProps
+  readonly config: MonitorStageProps
   logDeliveryLogGroup: LogGroup
   resourceGroup: CfnGroup
 

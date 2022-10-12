@@ -3,7 +3,7 @@ import { Duration } from 'aws-cdk-lib'
 import { Function, Alias, Runtime, Architecture } from 'aws-cdk-lib/aws-lambda'
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
-import { deterministicName, setNameTag, codeFromDir } from '../../lib/utils'
+import { codeFromDir, deterministicName } from '../../lib/utils'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { EngineStateStack } from './engine-state-stack'
 import { BeStageProps } from './be-config'
@@ -14,7 +14,7 @@ export interface EngineStackProps extends NestedStackBaseProps {
 }
 
 export class EngineStack extends NestedStackBase {
-  protected readonly config: BeStageProps
+  readonly config: BeStageProps
   readonly jobQueue: Queue
   engineLambda: Function
   engineLambdaAlias: Alias
@@ -30,16 +30,15 @@ export class EngineStack extends NestedStackBase {
     const code = codeFromDir(this.config.projectRootDir, 'go-app/bin/engine')
 
     // convention based secret name assembling
-    const testsecretName = [
-      this.config.project,
-      this.config.stageName,
-      this.config.appName,
-      'testsecret',
-    ].join('/')
+    const testsecretName = deterministicName({
+      name: 'testsecret',
+      region: null,
+      separator: '/',
+    }, this)
 
     this.engineLambda = new Function(this, 'EngineLambda', {
       code,
-      description: deterministicName(this, 'EngineLambda'),
+      description: deterministicName({ name: 'EngineLambda '}, this),
       runtime: Runtime.GO_1_X,
       architecture: Architecture.X86_64,
       timeout: Duration.seconds(15),

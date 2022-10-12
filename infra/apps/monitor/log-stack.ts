@@ -5,16 +5,16 @@ import { CfnDeliveryStream } from 'aws-cdk-lib/aws-kinesisfirehose'
 import { MonitorStageProps } from './monitor-config'
 import { PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
 import { LogStream } from 'aws-cdk-lib/aws-logs'
-import { deterministicName, regionToCode } from '../../lib/utils'
+import { deterministicName } from '../../lib/utils'
 import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3'
-import { Aws } from 'aws-cdk-lib'
+import { Arn, Aws } from 'aws-cdk-lib'
 
 export interface LogStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack
 }
 
 export class LogStack extends NestedStackBase {
-  protected readonly config: MonitorStageProps
+  readonly config: MonitorStageProps
   globalLogsBucket: IBucket
   stateStack: StateStack
   deliveryStream: CfnDeliveryStream
@@ -34,14 +34,18 @@ export class LogStack extends NestedStackBase {
   }
 
   private initSubscriptionFilterRole () {
-    const regCode = regionToCode(this.region)
-    const logDeliveryStreamName = `${this.config.project}-${this.config.stageName}-${regCode}-monitor-LogDeliveryStream`
-    const logDeliveryStreamArn = `arn:${this.partition}:firehose:`
-      + `${this.region}:${Aws.ACCOUNT_ID}:deliverystream/`
-      + logDeliveryStreamName
+    const logDeliveryStreamName = deterministicName({
+      name: 'LogDeliveryStream',
+    }, this)
+
+    const logDeliveryStreamArn = Arn.format({
+      service: 'firehose',
+      resource: 'deliverystream',
+      resourceName: logDeliveryStreamName,
+    }, this)
 
     const subscriptionFilterRole = new Role(this, 'SubscriptionFilterRole', {
-      roleName: deterministicName(this, 'SubscriptionFilterRole'),
+      roleName: deterministicName({ name: 'SubscriptionFilterRole' }, this),
       assumedBy: new ServicePrincipal('logs.amazonaws.com'),
     })
 
@@ -52,19 +56,19 @@ export class LogStack extends NestedStackBase {
           'firehose:PutRecord',
           'firehose:PutRecordBatch',
         ],
-        resources: [ logDeliveryStreamArn ],
+        resources: [
+          logDeliveryStreamArn,
+        ],
       }
     ))
   }
 
   private importGlobalLogsBucket () {
-    const logsBucketName = [
-      this.config.project,
-      this.config.stageName,
-      regionToCode(this.config.globalRegion),
-      'monitor-gl',
-      this.config.logsBucketName,
-    ].join('-').toLowerCase() + '-' + Aws.ACCOUNT_ID
+    const logsBucketName = deterministicName({
+      name: this.config.logsBucketName,
+      region: null,
+      app: null,
+    }, this) .toLowerCase() + '-' + Aws.ACCOUNT_ID
 
     this.globalLogsBucket = Bucket.fromBucketName(this, 'LogsBucket', logsBucketName)
   }
@@ -79,7 +83,7 @@ export class LogStack extends NestedStackBase {
   }
 
   private initDeliveryStream () {
-    const deliveryStreamName = deterministicName(this, 'LogDeliveryStream')
+    const deliveryStreamName = deterministicName({ name: 'LogDeliveryStream' }, this)
 
     const logDeliveryLogStream = new LogStream(this, 'LogDelivery', {
       logGroup: this.stateStack.logDeliveryLogGroup,

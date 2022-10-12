@@ -7,7 +7,7 @@ export interface EngineStateStackProps extends NestedStackBaseProps {
 }
 
 export class EngineStateStack extends NestedStackBase {
-  protected readonly config: BeStageProps
+  readonly config: BeStageProps
   jobQueue: Queue
   jobQueueDlq: Queue
 

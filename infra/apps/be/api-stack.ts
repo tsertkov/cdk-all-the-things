@@ -5,7 +5,7 @@ import { AccessLogFormat, LogGroupLogDestination, MethodLoggingLevel, EndpointTy
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { Table } from 'aws-cdk-lib/aws-dynamodb'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
-import { deterministicName, setNameTag, codeFromDir } from '../../lib/utils'
+import { codeFromDir, deterministicName } from '../../lib/utils'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { ApiStateStack } from './api-state-stack'
 import { EngineStateStack } from './engine-state-stack'
@@ -17,7 +17,7 @@ export interface ApiStackProps extends NestedStackBaseProps {
 }
 
 export class ApiStack extends NestedStackBase {
-  protected readonly config: BeStageProps
+  readonly config: BeStageProps
   readonly restApiLogGroup: LogGroup
   readonly jobQueue: Queue
   readonly jobTable: Table
@@ -38,7 +38,7 @@ export class ApiStack extends NestedStackBase {
 
   private initRestApi () {
     this.restApi = new LambdaRestApi(this, 'RestApi', {
-      restApiName: deterministicName(this, 'RestApi'),
+      restApiName: deterministicName({ name: 'RestApi' }, this),
       handler: this.apiLambdaAlias,
       endpointTypes: [ EndpointType.REGIONAL ],
       deployOptions: {
@@ -57,7 +57,7 @@ export class ApiStack extends NestedStackBase {
 
     this.apiLambda = new Function(this, 'ApiLambda', {
       code,
-      description: deterministicName(this, 'ApiLambda'),
+      description: deterministicName({ name: 'ApiLambda' }, this),
       runtime: Runtime.GO_1_X,
       architecture: Architecture.X86_64,
       timeout: Duration.seconds(15),
