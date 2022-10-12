@@ -94,7 +94,7 @@ User apps:
 
 Deployer-glb application deploys all other applications including self updates.
 
-![applications deployment](https://user-images.githubusercontent.com/5339042/194963466-5958ac32-8de8-4d9e-8986-29c06a9201a2.svg)
+![applications deployment](https://user-images.githubusercontent.com/5339042/195421338-ef36f37b-6765-4568-9819-208f606d820a.svg)
 
 ### Deployer architecture
 
