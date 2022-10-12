@@ -27,14 +27,4 @@ describe('be', () => {
     const nestedStacks = tpl.findResources('AWS::CloudFormation::Stack')
     expect(Object.keys(nestedStacks).length).toBe(5)
   })
-
-  test('all nested stacks have Name tag', () => {
-    tpl.hasResource('AWS::CloudFormation::Stack', {
-      Properties: {
-        Tags: [{
-          'Key': 'Name',
-        }],
-      },
-    })
-  })
 })
