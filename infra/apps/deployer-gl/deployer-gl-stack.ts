@@ -225,7 +225,7 @@ export class DeployerGlStack extends NestedStackBase {
           service: 'secretsmanager',
           resource: 'secret',
           arnFormat: ArnFormat.COLON_RESOURCE_NAME,
-          resourceName: `${this.config.project}/age-key`,
+          resourceName: `${this.config.project}/age-key-??????`,
         }, this),
       ],
     }))
