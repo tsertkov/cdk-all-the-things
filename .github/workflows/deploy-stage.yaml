@@ -31,7 +31,7 @@ jobs:
       id: vars
       run: |
         pipelineName=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.app }}
-        echo "::set-output name=pipelineName::$pipelineName"
+        echo "pipelineName=${pipelineName}" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -53,7 +53,7 @@ jobs:
           --query VersionId \
           --output text)
         echo "Artifact revision: $revision"
-        echo "::set-output name=revision::$revision"
+        echo "revision=${revision}" >> $GITHUB_OUTPUT
 
     - name: Start pipeline
       id: pipeline
@@ -63,7 +63,7 @@ jobs:
           --query pipelineExecutionId --output text)
 
         echo "Started pipeline: ${{ steps.vars.outputs.pipelineName }} executionId: ${executionId}"
-        echo "::set-output name=executionId::$executionId"
+        echo "executionId=${executionId}" >> $GITHUB_OUTPUT
 
     - name: Validate pipeline execution source
       run: |

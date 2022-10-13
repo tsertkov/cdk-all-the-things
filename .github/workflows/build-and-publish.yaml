@@ -33,7 +33,7 @@ jobs:
       run: |
         ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
         ecr_repo=${ecr_repo,,}
-        echo "::set-output name=ecr_repo::$ecr_repo"
+        echo "ecr_repo=${ecr_repo}" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -53,7 +53,7 @@ jobs:
         make ci
         image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.ecr_repo }}:${{ inputs.version }}
         docker tag infra $image
-        echo "::set-output name=image::$image"
+        echo "image=${image}" >> $GITHUB_OUTPUT
 
     - name: Upload image to ECR
       run: |

@@ -31,8 +31,8 @@ jobs:
       run: |
         src_ecr_repo=${{ secrets.project }}-${{ inputs.src_stage }}-${{ inputs.name }}
         dst_ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
-        echo "::set-output name=src_ecr_repo::${src_ecr_repo,,}"
-        echo "::set-output name=dst_ecr_repo::${dst_ecr_repo,,}"
+        echo "src_ecr_repo=${src_ecr_repo,,}" >> $GITHUB_OUTPUT
+        echo "dst_ecr_repo=${dst_ecr_repo,,}" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -51,7 +51,7 @@ jobs:
       run: |
         image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.src_ecr_repo }}:${{ inputs.version }}
         docker pull $image
-        echo "::set-output name=src_image::$image"
+        echo "src_image=${image}" >> $GITHUB_OUTPUT
 
     - name: Push container image to dst stage
       id: push-image
@@ -59,4 +59,4 @@ jobs:
         image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.dst_ecr_repo }}:${{ inputs.version }}
         docker tag ${{ steps.pull-image.outputs.src_image }} $image
         docker push $image
-        echo "::set-output name=dst_image::$image"
+        echo "dst_image=${image}" >> $GITHUB_OUTPUT
