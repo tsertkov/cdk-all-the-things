@@ -35,7 +35,7 @@ jobs:
         echo "dst_ecr_repo=${dst_ecr_repo,,}" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v1.7.0
       with:
         aws-region: ${{ secrets.aws_global_region }}
         role-session-name: ${{ secrets.project }}-${{ secrets.stage }}-promote
@@ -44,7 +44,7 @@ jobs:
 
     - name: Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      uses: aws-actions/amazon-ecr-login@v1.5.1
 
     - name: Pull container image from src stage
       id: pull-image

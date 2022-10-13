@@ -34,7 +34,7 @@ jobs:
         echo "pipelineName=${pipelineName}" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v1.7.0
       with:
         aws-region: ${{ secrets.aws_global_region }}
         role-session-name: deploy-stage-${{ secrets.stage }}
