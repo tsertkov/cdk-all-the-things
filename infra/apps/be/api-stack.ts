@@ -1,6 +1,6 @@
 import { Construct } from 'constructs'
 import { Duration } from 'aws-cdk-lib'
-import { Function, Alias, Runtime, Architecture } from 'aws-cdk-lib/aws-lambda'
+import { Function as Lambda, Alias, Runtime, Architecture } from 'aws-cdk-lib/aws-lambda'
 import { AccessLogFormat, LogGroupLogDestination, MethodLoggingLevel, EndpointType, LambdaRestApi } from 'aws-cdk-lib/aws-apigateway'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { Table } from 'aws-cdk-lib/aws-dynamodb'
@@ -21,7 +21,7 @@ export class ApiStack extends NestedStackBase {
   readonly restApiLogGroup: LogGroup
   readonly jobQueue: Queue
   readonly jobTable: Table
-  apiLambda: Function
+  apiLambda: Lambda
   apiLambdaAlias: Alias
   restApi: LambdaRestApi
 
@@ -55,7 +55,7 @@ export class ApiStack extends NestedStackBase {
   private initApiLambda () {
     const code = codeFromDir(this.config.projectRootDir, 'go-app/bin/api')
 
-    this.apiLambda = new Function(this, 'ApiLambda', {
+    this.apiLambda = new Lambda(this, 'ApiLambda', {
       code,
       description: deterministicName({ name: 'ApiLambda' }, this),
       runtime: Runtime.GO_1_X,

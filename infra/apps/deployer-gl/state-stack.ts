@@ -8,9 +8,6 @@ import { DeployerGlStageProps } from './deployer-gl-config'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { deterministicName } from '../../lib/utils'
 
-export interface StateStackProps extends NestedStackBaseProps {
-}
-
 export class StateStack extends NestedStackBase {
   readonly config: DeployerGlStageProps
   readonly githubOidcProviderArn: string
@@ -19,7 +16,7 @@ export class StateStack extends NestedStackBase {
   deployerEcrRepo: Repository
   deployerLogGroup: LogGroup
 
-  constructor(scope: Construct, id: string, props: StateStackProps) {
+  constructor(scope: Construct, id: string, props: NestedStackBaseProps) {
     super(scope, id, props)
 
     this.githubOidcProviderArn = Fn.importValue(this.config.githubOidcArnCfnOutput)

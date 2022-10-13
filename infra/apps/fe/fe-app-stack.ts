@@ -5,13 +5,11 @@ import { CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { FeStageProps } from './fe-config'
 
-export interface FeAppStackProps extends StackBaseProps {}
-
 export class FeAppStack extends StackBase {
   readonly config: FeStageProps
   webBucket: Bucket
 
-  constructor(scope: Construct, id: string, props: FeAppStackProps) {
+  constructor(scope: Construct, id: string, props: StackBaseProps) {
     super(scope, id, props)
     this.initWebBucket()
     this.initOutputs()

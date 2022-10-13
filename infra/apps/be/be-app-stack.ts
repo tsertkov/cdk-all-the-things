@@ -9,8 +9,6 @@ import { EngineStack } from './engine-stack'
 import { EngineStateStack } from './engine-state-stack'
 import { BeStageProps } from './be-config'
 
-export interface BeAppStackProps extends StackBaseProps {}
-
 export class BeAppStack extends StackBase {
   readonly config: BeStageProps
   engineStack: EngineStack
@@ -19,7 +17,7 @@ export class BeAppStack extends StackBase {
   apiStateStack: ApiStateStack
   monitorStack: MonitorStack
 
-  constructor(scope: Construct, id: string, props: BeAppStackProps) {
+  constructor(scope: Construct, id: string, props: StackBaseProps) {
     super(scope, id, props)
 
     this.initNestedStacks()

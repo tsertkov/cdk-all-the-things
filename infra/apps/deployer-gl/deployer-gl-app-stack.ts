@@ -6,20 +6,18 @@ import { DeployerGlStack } from './deployer-gl-stack'
 import { CfnOutput } from 'aws-cdk-lib'
 import { DeployerGlStageProps } from './deployer-gl-config'
 
-export interface DeployerGlAppStackProps extends StackBaseProps {}
-
 export class DeployerGlAppStack extends StackBase {
   readonly config: DeployerGlStageProps
   stateStack: StateStack
   deployerStack: DeployerGlStack
 
-  constructor(scope: Construct, id: string, props: DeployerGlAppStackProps) {
+  constructor(scope: Construct, id: string, props: StackBaseProps) {
     super(scope, id, props)
     this.initNestedStacks(props)
     this.initOutputs()
   }
 
-  private initNestedStacks(props: DeployerGlAppStackProps) {
+  private initNestedStacks(props: StackBaseProps) {
     this.stateStack = new StateStack(this, 'State', {
       config: props.config,
     })

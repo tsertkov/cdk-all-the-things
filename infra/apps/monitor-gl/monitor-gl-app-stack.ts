@@ -5,13 +5,11 @@ import { Aws, CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { MonitorGlStageProps } from './monitor-gl-config'
 
-export interface MonitorGlAppStackProps extends StackBaseProps {}
-
 export class MonitorGlAppStack extends StackBase {
   readonly config: MonitorGlStageProps
   logsBucket: Bucket
 
-  constructor(scope: Construct, id: string, props: MonitorGlAppStackProps) {
+  constructor(scope: Construct, id: string, props: StackBaseProps) {
     super(scope, id, props)
     this.initLogsBucket()
     this.initOutputs()

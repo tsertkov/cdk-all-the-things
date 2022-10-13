@@ -1,6 +1,6 @@
 import { Construct } from 'constructs'
 import { Duration } from 'aws-cdk-lib'
-import { Function, Alias, Runtime, Architecture } from 'aws-cdk-lib/aws-lambda'
+import { Function as Lambda, Alias, Runtime, Architecture } from 'aws-cdk-lib/aws-lambda'
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
 import { codeFromDir, deterministicName } from '../../lib/utils'
@@ -16,7 +16,7 @@ export interface EngineStackProps extends NestedStackBaseProps {
 export class EngineStack extends NestedStackBase {
   readonly config: BeStageProps
   readonly jobQueue: Queue
-  engineLambda: Function
+  engineLambda: Lambda
   engineLambdaAlias: Alias
 
   constructor(scope: Construct, id: string, props: EngineStackProps) {
@@ -36,7 +36,7 @@ export class EngineStack extends NestedStackBase {
       separator: '/',
     }, this)
 
-    this.engineLambda = new Function(this, 'EngineLambda', {
+    this.engineLambda = new Lambda(this, 'EngineLambda', {
       code,
       description: deterministicName({ name: 'EngineLambda '}, this),
       runtime: Runtime.GO_1_X,

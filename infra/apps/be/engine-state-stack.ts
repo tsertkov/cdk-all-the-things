@@ -3,15 +3,12 @@ import { Queue } from 'aws-cdk-lib/aws-sqs'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { BeStageProps } from './be-config'
 
-export interface EngineStateStackProps extends NestedStackBaseProps {
-}
-
 export class EngineStateStack extends NestedStackBase {
   readonly config: BeStageProps
   jobQueue: Queue
   jobQueueDlq: Queue
 
-  constructor(scope: Construct, id: string, props: EngineStateStackProps) {
+  constructor(scope: Construct, id: string, props: NestedStackBaseProps) {
     super(scope, id, props)
     this.initJobQueue()
   }

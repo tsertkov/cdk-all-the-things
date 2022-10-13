@@ -5,19 +5,17 @@ import { StateStack } from './state-stack'
 import { LogStack } from './log-stack'
 import { CfnOutput } from 'aws-cdk-lib'
 
-export interface MonitorAppStackProps extends StackBaseProps {}
-
 export class MonitorAppStack extends StackBase {
   stateStack: StateStack
   logStack: LogStack
 
-  constructor(scope: Construct, id: string, props: MonitorAppStackProps) {
+  constructor(scope: Construct, id: string, props: StackBaseProps) {
     super(scope, id, props)
     this.initNestedStacks(props)
     this.initOutputs()
   }
 
-  private initNestedStacks(props: MonitorAppStackProps) {
+  private initNestedStacks(props: StackBaseProps) {
     this.stateStack = new StateStack(this, 'StateState', {
       config: props.config,
     })

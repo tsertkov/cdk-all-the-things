@@ -4,15 +4,12 @@ import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
 import { BeStageProps } from './be-config'
 
-export interface ApiStateStackProps extends NestedStackBaseProps {
-}
-
 export class ApiStateStack extends NestedStackBase {
   readonly config: BeStageProps
   jobTable: Table
   restApiLogGroup: LogGroup
 
-  constructor(scope: Construct, id: string, props: ApiStateStackProps) {
+  constructor(scope: Construct, id: string, props: NestedStackBaseProps) {
     super(scope, id, props)
 
     this.initJobTable()

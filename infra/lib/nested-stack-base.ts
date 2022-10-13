@@ -3,7 +3,7 @@ import { NestedStack } from 'aws-cdk-lib'
 import { StageProps } from './config'
 import { StackBaseProps } from './stack-base'
 
-export interface NestedStackBaseProps extends StackBaseProps {}
+export { StackBaseProps as NestedStackBaseProps }
 
 export class NestedStackBase extends NestedStack {
   readonly config: StageProps

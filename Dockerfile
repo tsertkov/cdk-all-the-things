@@ -6,7 +6,8 @@ COPY infra infra
 RUN set -e; \
     # infra test & build
     cd infra; \
-    npm ci; \
+    npm install; \
+    npm run lint; \
     npm test; \
     npm run build; \
     # prepare infra for packaging
@@ -38,4 +39,4 @@ COPY --from=build /app/infra/package/ ./infra
 RUN set -e; \
     # install final npm deps
     cd infra; \
-    npm i --omit=dev
+    npm install --omit=dev

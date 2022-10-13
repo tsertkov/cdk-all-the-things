@@ -16,9 +16,12 @@ export interface StageProps {
   readonly projectRootDir: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MapOfAny = Record<string, any>
+
 interface RawConfig {
-  readonly common: Record<string, any>
-  readonly stages: Record<string, any>
+  readonly common: MapOfAny
+  readonly stages: MapOfAny
   readonly project: string
 }
 
@@ -64,7 +67,7 @@ export class Config {
     )
 
     // merge result config with app config and app stage config
-    const appConfig = this.rawConfig[appName as keyof RawConfig] as Record<string, any>
+    const appConfig = this.rawConfig[appName as keyof RawConfig] as MapOfAny
     if (appConfig) {
       if (appConfig.common) {
         Object.assign(config, appConfig.common)

@@ -4,15 +4,12 @@ import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { CfnGroup } from 'aws-cdk-lib/aws-resourcegroups'
 import { MonitorStageProps } from './monitor-config'
 
-export interface StateStackProps extends NestedStackBaseProps {
-}
-
 export class StateStack extends NestedStackBase {
   readonly config: MonitorStageProps
   logDeliveryLogGroup: LogGroup
   resourceGroup: CfnGroup
 
-  constructor(scope: Construct, id: string, props: StateStackProps) {
+  constructor(scope: Construct, id: string, props: NestedStackBaseProps) {
     super(scope, id, props)
     this.initResourceGroup()
     this.initLogDeliveryLogGroup()
