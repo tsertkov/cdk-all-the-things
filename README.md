@@ -102,20 +102,20 @@ Main job of deployer is to run CloudFormation stack updates. It uses CodeBuild t
 
 ![deployer architecture](https://user-images.githubusercontent.com/5339042/195419705-4b1d9b33-441b-41a3-8eda-ee4ba7475634.svg)
 
-1) Upload deployer container image to ECR repo
-2) Upload deployment config to artifacts S3 bucket
-3) Trigger and monitor pipeline execution
-4) Fetch deployment config from artifacts S3 bucket
-5) Trigger CodeBuild RO project to run `make diff` command
-6) Download container image from ECR
-7) Get secret key to decrypt password file
-8) CloudFormation diff
-9) Manual approve step in AWS CodePipeline
-10) Trigger CodeBuild RW project to run `make deploy` command
-11) Get secret key to decrypt password file
-12) Download container image from ECR
-13) CloudFormation deploy
-14) Create/update secrets in SecretsManager
+1) Upload deployer container image to ECR repo.
+2) Upload deployment config to artifacts S3 bucket.
+3) Trigger and monitor pipeline execution.
+4) Fetch deployment config from artifacts S3 bucket.
+5) Trigger CodeBuild RO project to run `make diff` command.
+6) Download container image from ECR.
+7) Get secret key to decrypt password file.
+8) CloudFormation diff.
+9) Manual approve step in AWS CodePipeline.
+10) Trigger CodeBuild RW project to run `make deploy` command.
+11) Get secret key to decrypt password file.
+12) Download container image from ECR.
+13) CloudFormation deploy.
+14) Create/update secrets in SecretsManager.
 
 ## Containerized deployer
 
