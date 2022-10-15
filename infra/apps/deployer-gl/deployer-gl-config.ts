@@ -11,12 +11,15 @@ export interface DeployerGlStageProps extends StageProps {
 }
 
 export class DeployerGlConfig extends Config {
-  get stages (): DeployerGlStageProps[] {
+  get stages(): DeployerGlStageProps[] {
     return super.stages as DeployerGlStageProps[]
   }
 
-  stageConfig (stageName: string, appName: string): DeployerGlStageProps {
-    const stageConfig = super.stageConfig(stageName, appName) as DeployerGlStageProps
+  stageConfig(stageName: string, appName: string): DeployerGlStageProps {
+    const stageConfig = super.stageConfig(
+      stageName,
+      appName
+    ) as DeployerGlStageProps
     stageConfig.rootConfig = this
     stageConfig.appModules = Object.keys(appModules)
     return stageConfig

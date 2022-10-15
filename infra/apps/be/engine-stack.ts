@@ -1,10 +1,18 @@
 import { Construct } from 'constructs'
 import { Duration } from 'aws-cdk-lib'
-import { Function as Lambda, Alias, Runtime, Architecture } from 'aws-cdk-lib/aws-lambda'
+import {
+  Function as Lambda,
+  Alias,
+  Runtime,
+  Architecture,
+} from 'aws-cdk-lib/aws-lambda'
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
 import { codeFromDir, deterministicName } from '../../lib/utils'
-import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
+import {
+  NestedStackBase,
+  NestedStackBaseProps,
+} from '../../lib/nested-stack-base'
 import { EngineStateStack } from './engine-state-stack'
 import { BeStageProps } from './be-config'
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
@@ -27,19 +35,22 @@ export class EngineStack extends NestedStackBase {
     this.initEngineLambda()
   }
 
-  private initEngineLambda () {
+  private initEngineLambda() {
     const code = codeFromDir(this.config.projectRootDir, 'go-app/bin/engine')
 
     // convention based secret name assembling
-    const testsecretName = deterministicName({
-      name: 'testsecret',
-      region: null,
-      separator: '/',
-    }, this)
+    const testsecretName = deterministicName(
+      {
+        name: 'testsecret',
+        region: null,
+        separator: '/',
+      },
+      this
+    )
 
     this.engineLambda = new Lambda(this, 'EngineLambda', {
       code,
-      description: deterministicName({ name: 'EngineLambda '}, this),
+      description: deterministicName({ name: 'EngineLambda ' }, this),
       runtime: Runtime.GO_1_X,
       architecture: Architecture.X86_64,
       timeout: Duration.seconds(15),
@@ -68,12 +79,11 @@ export class EngineStack extends NestedStackBase {
     })
 
     // subscribe lambda to jobQueue
-    this.engineLambdaAlias.addEventSource(
-      new SqsEventSource(this.jobQueue)
-    )
+    this.engineLambdaAlias.addEventSource(new SqsEventSource(this.jobQueue))
 
     // grant lambda read access to testsecret
-    Secret.fromSecretNameV2(this, 'TestSecret', testsecretName)
-      .grantRead(this.engineLambdaAlias)
+    Secret.fromSecretNameV2(this, 'TestSecret', testsecretName).grantRead(
+      this.engineLambdaAlias
+    )
   }
 }

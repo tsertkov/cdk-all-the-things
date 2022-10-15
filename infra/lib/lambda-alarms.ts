@@ -24,7 +24,7 @@ export interface LambdaMetricAlarmsProps {
   metricAlarms: LambdaMetricAlarm[]
 }
 
-function addLambdaErrorsMetricAlarm (
+function addLambdaErrorsMetricAlarm(
   stack: StackBase,
   id: string,
   lambda: Lambda,
@@ -49,7 +49,7 @@ function addLambdaErrorsMetricAlarm (
   })
 }
 
-function addLambdaDurationMetricAlarm (
+function addLambdaDurationMetricAlarm(
   stack: StackBase,
   id: string,
   lambda: Lambda,
@@ -74,28 +74,18 @@ function addLambdaDurationMetricAlarm (
   })
 }
 
-export function addLambdaMetricAlarms ({
+export function addLambdaMetricAlarms({
   stack,
   id,
   lambda,
   metricAlarms,
 }: LambdaMetricAlarmsProps) {
-  metricAlarms.forEach(metricAlarm => {
+  metricAlarms.forEach((metricAlarm) => {
     switch (metricAlarm.metric) {
       case LambdaMetric.ERRORS:
-        return addLambdaErrorsMetricAlarm(
-          stack,
-          id,
-          lambda,
-          metricAlarm,
-        )
+        return addLambdaErrorsMetricAlarm(stack, id, lambda, metricAlarm)
       case LambdaMetric.DURATION:
-        return addLambdaDurationMetricAlarm(
-          stack,
-          id,
-          lambda,
-          metricAlarm,
-        )
+        return addLambdaDurationMetricAlarm(stack, id, lambda, metricAlarm)
       default:
         throw Error(`Unhandled metric: '${metricAlarm.metric}'`)
     }

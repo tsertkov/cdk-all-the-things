@@ -15,11 +15,9 @@ export class FeAppStack extends StackBase {
     this.initOutputs()
   }
 
-  private initWebBucket () {
-    const autoDeleteObjects = this.config.removalPolicy === RemovalPolicy.DESTROY
-
+  private initWebBucket() {
     this.webBucket = new Bucket(this, 'WebBucket', {
-      autoDeleteObjects,
+      autoDeleteObjects: this.config.removalPolicy === RemovalPolicy.DESTROY,
       removalPolicy: this.config.removalPolicy,
     })
   }

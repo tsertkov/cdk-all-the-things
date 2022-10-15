@@ -1,6 +1,9 @@
 import { Construct } from 'constructs'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
-import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
+import {
+  NestedStackBase,
+  NestedStackBaseProps,
+} from '../../lib/nested-stack-base'
 import { BeStageProps } from './be-config'
 
 export class EngineStateStack extends NestedStackBase {
@@ -19,7 +22,7 @@ export class EngineStateStack extends NestedStackBase {
       deadLetterQueue: {
         queue: this.jobQueueDlq,
         maxReceiveCount: 3,
-      }
+      },
     })
   }
 }

@@ -8,7 +8,11 @@ let infra: Infra
 let stage: AppStage
 
 beforeAll(() => {
-  const config = new monitor.Config([ 'config.yaml' ], path.join(__dirname, '../..'), 'monitor')
+  const config = new monitor.Config(
+    ['config.yaml'],
+    path.join(__dirname, '../..'),
+    'monitor'
+  )
   infra = new Infra(config, monitor.AppStack)
 
   // test only first stage
@@ -17,7 +21,7 @@ beforeAll(() => {
 
 describe('monitor', () => {
   let tpl: Template
-  beforeAll(() => tpl = Template.fromStack(stage.appStack))
+  beforeAll(() => (tpl = Template.fromStack(stage.appStack)))
 
   test('contains expected outputs', () => {
     tpl.hasOutput('LogDeliveryStreamArn', {})

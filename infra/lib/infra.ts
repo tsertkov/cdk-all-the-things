@@ -8,18 +8,15 @@ export class Infra {
   readonly stages: AppStage[] = []
   protected config: Config
 
-  constructor(
-    config: Config,
-    appStackClass: typeof StackBase
-  ) {
+  constructor(config: Config, appStackClass: typeof StackBase) {
     this.app = new App()
     this.config = config
     this.initStages(appStackClass)
   }
 
   private initStages(appStackClass: typeof StackBase) {
-    this.config.stages.forEach(stageConfig =>
-      stageConfig.regions.forEach(region =>
+    this.config.stages.forEach((stageConfig) =>
+      stageConfig.regions.forEach((region) =>
         this.stages.push(
           new AppStage(this.app, {
             appStackClass,

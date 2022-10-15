@@ -15,18 +15,22 @@ export class MonitorGlAppStack extends StackBase {
     this.initOutputs()
   }
 
-  private initLogsBucket () {
-    const autoDeleteObjects = this.config.removalPolicy === RemovalPolicy.DESTROY
-
-    const bucketName = deterministicName({
-      name: this.config.logsBucketName,
-      app: null,
-      region: null,
-    }, this).toLowerCase() + '-' + Aws.ACCOUNT_ID
+  private initLogsBucket() {
+    const bucketName =
+      deterministicName(
+        {
+          name: this.config.logsBucketName,
+          app: null,
+          region: null,
+        },
+        this
+      ).toLowerCase() +
+      '-' +
+      Aws.ACCOUNT_ID
 
     this.logsBucket = new Bucket(this, 'LogsBucket', {
       bucketName,
-      autoDeleteObjects,
+      autoDeleteObjects: this.config.removalPolicy === RemovalPolicy.DESTROY,
       removalPolicy: this.config.removalPolicy,
     })
   }

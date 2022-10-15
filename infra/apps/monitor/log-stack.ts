@@ -1,5 +1,8 @@
 import { Construct } from 'constructs'
-import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
+import {
+  NestedStackBase,
+  NestedStackBaseProps,
+} from '../../lib/nested-stack-base'
 import { StateStack } from './state-stack'
 import { CfnDeliveryStream } from 'aws-cdk-lib/aws-kinesisfirehose'
 import { MonitorStageProps } from './monitor-config'
@@ -33,16 +36,22 @@ export class LogStack extends NestedStackBase {
     this.initSubscriptionFilterRole()
   }
 
-  private initSubscriptionFilterRole () {
-    const logDeliveryStreamName = deterministicName({
-      name: 'LogDeliveryStream',
-    }, this)
+  private initSubscriptionFilterRole() {
+    const logDeliveryStreamName = deterministicName(
+      {
+        name: 'LogDeliveryStream',
+      },
+      this
+    )
 
-    const logDeliveryStreamArn = Arn.format({
-      service: 'firehose',
-      resource: 'deliverystream',
-      resourceName: logDeliveryStreamName,
-    }, this)
+    const logDeliveryStreamArn = Arn.format(
+      {
+        service: 'firehose',
+        resource: 'deliverystream',
+        resourceName: logDeliveryStreamName,
+      },
+      this
+    )
 
     const subscriptionFilterRole = new Role(this, 'SubscriptionFilterRole', {
       roleName: deterministicName({ name: 'SubscriptionFilterRole' }, this),
@@ -56,24 +65,32 @@ export class LogStack extends NestedStackBase {
           'firehose:PutRecord',
           'firehose:PutRecordBatch',
         ],
-        resources: [
-          logDeliveryStreamArn,
-        ],
-      }
-    ))
+        resources: [logDeliveryStreamArn],
+      })
+    )
   }
 
-  private importGlobalLogsBucket () {
-    const logsBucketName = deterministicName({
-      name: this.config.logsBucketName,
-      region: null,
-      app: null,
-    }, this) .toLowerCase() + '-' + Aws.ACCOUNT_ID
+  private importGlobalLogsBucket() {
+    const logsBucketName =
+      deterministicName(
+        {
+          name: this.config.logsBucketName,
+          region: null,
+          app: null,
+        },
+        this
+      ).toLowerCase() +
+      '-' +
+      Aws.ACCOUNT_ID
 
-    this.globalLogsBucket = Bucket.fromBucketName(this, 'LogsBucket', logsBucketName)
+    this.globalLogsBucket = Bucket.fromBucketName(
+      this,
+      'LogsBucket',
+      logsBucketName
+    )
   }
 
-  private initFirehoseRole () {
+  private initFirehoseRole() {
     this.firehoseRole = new Role(this, 'FirehoseRole', {
       assumedBy: new ServicePrincipal('firehose.amazonaws.com'),
     })
@@ -82,8 +99,11 @@ export class LogStack extends NestedStackBase {
     this.globalLogsBucket.grantReadWrite(this.firehoseRole)
   }
 
-  private initDeliveryStream () {
-    const deliveryStreamName = deterministicName({ name: 'LogDeliveryStream' }, this)
+  private initDeliveryStream() {
+    const deliveryStreamName = deterministicName(
+      { name: 'LogDeliveryStream' },
+      this
+    )
 
     const logDeliveryLogStream = new LogStream(this, 'LogDelivery', {
       logGroup: this.stateStack.logDeliveryLogGroup,
@@ -103,16 +123,16 @@ export class LogStack extends NestedStackBase {
       },
     })
 
-    this.firehoseRole.addToPrincipalPolicy(new PolicyStatement({
-      actions: [
-        'kinesis:DescribeStream',
-        'kinesis:GetShardIterator',
-        'kinesis:GetRecords',
-        'kinesis:ListShards',
-      ],
-      resources: [
-        this.deliveryStream.attrArn,
-      ],
-    }))
+    this.firehoseRole.addToPrincipalPolicy(
+      new PolicyStatement({
+        actions: [
+          'kinesis:DescribeStream',
+          'kinesis:GetShardIterator',
+          'kinesis:GetRecords',
+          'kinesis:ListShards',
+        ],
+        resources: [this.deliveryStream.attrArn],
+      })
+    )
   }
 }

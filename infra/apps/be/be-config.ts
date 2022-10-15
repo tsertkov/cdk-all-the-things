@@ -6,7 +6,7 @@ export interface BeStageProps extends StageProps {
 }
 
 export class BeConfig extends Config {
-  get stages (): BeStageProps[] {
+  get stages(): BeStageProps[] {
     return super.stages as BeStageProps[]
   }
 }

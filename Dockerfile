@@ -7,8 +7,7 @@ RUN set -e; \
 	# infra test & build
 	cd infra; \
 	npm install; \
-	npm run lint; \
-	npm test; \
+	npm run test; \
 	npm run build; \
 	# prepare infra for packaging
 	npm pack; \

@@ -8,7 +8,11 @@ let infra: Infra
 let stage: AppStage
 
 beforeAll(() => {
-  const config = new be.Config([ 'config.yaml' ], path.join(__dirname, '../..'), 'be')
+  const config = new be.Config(
+    ['config.yaml'],
+    path.join(__dirname, '../..'),
+    'be'
+  )
   infra = new Infra(config, be.AppStack)
 
   // test only first stage
@@ -17,7 +21,7 @@ beforeAll(() => {
 
 describe('be', () => {
   let tpl: Template
-  beforeAll(() => tpl = Template.fromStack(stage.appStack))
+  beforeAll(() => (tpl = Template.fromStack(stage.appStack)))
 
   test('contains expected outputs', () => {
     tpl.hasOutput('RestApiEndpoint', {})

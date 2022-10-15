@@ -29,7 +29,7 @@ export class AppStage extends Stage {
   }
 }
 
-function stageIdFromProps (props: AppStageProps): string {
+function stageIdFromProps(props: AppStageProps): string {
   const { project, stageName } = props.config
   const region = props.stageProps.env?.region
 

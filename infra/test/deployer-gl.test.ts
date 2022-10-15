@@ -8,7 +8,11 @@ let infra: Infra
 let stage: AppStage
 
 beforeAll(() => {
-  const config = new deployerGl.Config([ 'config.yaml' ], path.join(__dirname, '../..'), 'deployer-gl')
+  const config = new deployerGl.Config(
+    ['config.yaml'],
+    path.join(__dirname, '../..'),
+    'deployer-gl'
+  )
   infra = new Infra(config, deployerGl.AppStack)
 
   // test only first stage
@@ -17,7 +21,7 @@ beforeAll(() => {
 
 describe('deployer-gl', () => {
   let tpl: Template
-  beforeAll(() => tpl = Template.fromStack(stage.appStack))
+  beforeAll(() => (tpl = Template.fromStack(stage.appStack)))
 
   test('contains expected outputs', () => {
     tpl.hasOutput('CiRoleName', {})

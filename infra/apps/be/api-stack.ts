@@ -1,12 +1,26 @@
 import { Construct } from 'constructs'
 import { Duration } from 'aws-cdk-lib'
-import { Function as Lambda, Alias, Runtime, Architecture } from 'aws-cdk-lib/aws-lambda'
-import { AccessLogFormat, LogGroupLogDestination, MethodLoggingLevel, EndpointType, LambdaRestApi } from 'aws-cdk-lib/aws-apigateway'
+import {
+  Function as Lambda,
+  Alias,
+  Runtime,
+  Architecture,
+} from 'aws-cdk-lib/aws-lambda'
+import {
+  AccessLogFormat,
+  LogGroupLogDestination,
+  MethodLoggingLevel,
+  EndpointType,
+  LambdaRestApi,
+} from 'aws-cdk-lib/aws-apigateway'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { Table } from 'aws-cdk-lib/aws-dynamodb'
 import { Queue } from 'aws-cdk-lib/aws-sqs'
 import { codeFromDir, deterministicName } from '../../lib/utils'
-import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-base'
+import {
+  NestedStackBase,
+  NestedStackBaseProps,
+} from '../../lib/nested-stack-base'
 import { ApiStateStack } from './api-state-stack'
 import { EngineStateStack } from './engine-state-stack'
 import { BeStageProps } from './be-config'
@@ -37,11 +51,11 @@ export class ApiStack extends NestedStackBase {
     this.initRestApi()
   }
 
-  private initRestApi () {
+  private initRestApi() {
     this.restApi = new LambdaRestApi(this, 'RestApi', {
       restApiName: deterministicName({ name: 'RestApi' }, this),
       handler: this.apiLambdaAlias,
-      endpointTypes: [ EndpointType.REGIONAL ],
+      endpointTypes: [EndpointType.REGIONAL],
       deployOptions: {
         stageName: this.config.stageName,
         loggingLevel: MethodLoggingLevel.INFO,
@@ -53,7 +67,7 @@ export class ApiStack extends NestedStackBase {
     })
   }
 
-  private initApiLambda () {
+  private initApiLambda() {
     const code = codeFromDir(this.config.projectRootDir, 'go-app/bin/api')
 
     this.apiLambda = new Lambda(this, 'ApiLambda', {

@@ -11,7 +11,11 @@ if (!appName || !(appName in apps)) {
 
 const appModule = apps[appName as keyof typeof apps]
 const appStackClass = appModule.AppStack
-const configs = [ 'config.yaml', 'secrets.yaml' ]
-const config = new appModule.Config(configs, path.join(__dirname, '../..'), appName)
+const configs = ['config.yaml', 'secrets.yaml']
+const config = new appModule.Config(
+  configs,
+  path.join(__dirname, '../..'),
+  appName
+)
 
 new Infra(config, appStackClass)

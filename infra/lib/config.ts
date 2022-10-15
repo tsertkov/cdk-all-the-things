@@ -41,14 +41,14 @@ export class Config {
     }, {}) as RawConfig
   }
 
-  stageConfig (stageName: string, appName: string): StageProps {
+  stageConfig(stageName: string, appName: string): StageProps {
     // merge common config with common stage config
     const config = Object.assign(
       {
         project: this.rawConfig.project,
       },
       this.rawConfig.common,
-      this.rawConfig.stages[stageName],
+      this.rawConfig.stages[stageName]
     )
 
     config.stageName = stageName
@@ -56,15 +56,11 @@ export class Config {
     config.projectRootDir = this.projectRootDir
 
     // add default tags
-    config.tags = Object.assign(
-      {},
-      config.tags,
-      {
-        project: config.project,
-        appname: config.appName,
-        stage: stageName,
-      }
-    )
+    config.tags = Object.assign({}, config.tags, {
+      project: config.project,
+      appname: config.appName,
+      stage: stageName,
+    })
 
     // merge result config with app config and app stage config
     const appConfig = this.rawConfig[appName as keyof RawConfig] as MapOfAny
@@ -81,8 +77,9 @@ export class Config {
     return config
   }
 
-  get stages (): StageProps[] {
-    return Object.keys(this.rawConfig.stages)
-      .map(stageName => this.stageConfig(stageName, this.appName))
+  get stages(): StageProps[] {
+    return Object.keys(this.rawConfig.stages).map((stageName) =>
+      this.stageConfig(stageName, this.appName)
+    )
   }
 }

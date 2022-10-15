@@ -5,7 +5,7 @@ export interface MonitorGlStageProps extends StageProps {
 }
 
 export class MonitorGlConfig extends Config {
-  get stages (): MonitorGlStageProps[] {
+  get stages(): MonitorGlStageProps[] {
     return super.stages as MonitorGlStageProps[]
   }
 }

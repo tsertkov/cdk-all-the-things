@@ -15,24 +15,26 @@ export class MonitorStack extends NestedStackBase {
     this.initLogSubscriptions(props.logGroupNames)
   }
 
-  private initLogSubscriptions (logGroupNames: string[]) {
+  private initLogSubscriptions(logGroupNames: string[]) {
     const regCode = regionToCode(this.region)
 
     const logDeliveryStreamName = `${this.config.project}-${this.config.stageName}-${regCode}-monitor-LogDeliveryStream`
-    const logDeliveryStreamArn = `arn:${this.partition}:firehose:`
-      + `${this.region}:${Aws.ACCOUNT_ID}:deliverystream/`
-      + logDeliveryStreamName
+    const logDeliveryStreamArn =
+      `arn:${this.partition}:firehose:` +
+      `${this.region}:${Aws.ACCOUNT_ID}:deliverystream/` +
+      logDeliveryStreamName
 
     const subscriptionFilterRoleName = `${this.config.project}-${this.config.stageName}-${regCode}-monitor-SubscriptionFilterRole`
     const subscriptionFilterRoleArn = `arn:${this.partition}:iam::${Aws.ACCOUNT_ID}:role/${subscriptionFilterRoleName}`
 
-    logGroupNames.forEach((logGroupName, i) =>
-      new CfnSubscriptionFilter(this, `SubscriptionFilter${i}`, {
-        destinationArn: logDeliveryStreamArn,
-        roleArn: subscriptionFilterRoleArn,
-        filterPattern: '',
-        logGroupName,
-      })
+    logGroupNames.forEach(
+      (logGroupName, i) =>
+        new CfnSubscriptionFilter(this, `SubscriptionFilter${i}`, {
+          destinationArn: logDeliveryStreamArn,
+          roleArn: subscriptionFilterRoleArn,
+          filterPattern: '',
+          logGroupName,
+        })
     )
   }
 }
