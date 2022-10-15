@@ -50,7 +50,7 @@ jobs:
     - name: Build infra deployer image
       id: build-image
       run: |
-        make ci
+        make build
         image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.ecr_repo }}:${{ inputs.version }}
         docker tag infra $image
         echo "image=${image}" >> $GITHUB_OUTPUT
