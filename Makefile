@@ -37,11 +37,11 @@ endef
 ### list commands
 
 .PHONY: ls
-ls:
+ls: secrets-decrypt
 	@$(infra_cmd) ls $(stacks)
 
 .PHONY: lsa
-lsa:
+lsa: secrets-decrypt
 	@$(infra_cmd) ls "**"
 
 PHONY: lsa-all
