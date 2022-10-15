@@ -7,6 +7,9 @@ apps:
   - be
   - fe
 
+secrets:
+  keyRegion: eu-central-1
+
 common:
   removalPolicy: retain
   logRetentionDays: 90
