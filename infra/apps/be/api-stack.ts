@@ -10,6 +10,7 @@ import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-ba
 import { ApiStateStack } from './api-state-stack'
 import { EngineStateStack } from './engine-state-stack'
 import { BeStageProps } from './be-config'
+import { addLambdaMetricAlarms, LambdaMetric } from '../../lib/lambda-alarms'
 
 export interface ApiStackProps extends NestedStackBaseProps {
   readonly engineStateStack: EngineStateStack
@@ -70,6 +71,16 @@ export class ApiStack extends NestedStackBase {
         STAGE_NAME: this.config.stageName,
         REGION_NAME: this.region,
       },
+    })
+
+    addLambdaMetricAlarms({
+      stack: this,
+      id: 'ApiLambda',
+      lambda: this.apiLambda,
+      metricAlarms: [
+        { metric: LambdaMetric.ERRORS },
+        { metric: LambdaMetric.DURATION },
+      ],
     })
 
     // allow lambda to send sqs messages into job queue

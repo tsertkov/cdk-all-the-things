@@ -8,6 +8,7 @@ import { NestedStackBase, NestedStackBaseProps } from '../../lib/nested-stack-ba
 import { EngineStateStack } from './engine-state-stack'
 import { BeStageProps } from './be-config'
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
+import { addLambdaMetricAlarms, LambdaMetric } from '../../lib/lambda-alarms'
 
 export interface EngineStackProps extends NestedStackBaseProps {
   readonly engineStateStack: EngineStateStack
@@ -49,6 +50,16 @@ export class EngineStack extends NestedStackBase {
         REGION_NAME: this.region,
         TESTSECRET_NAME: testsecretName,
       },
+    })
+
+    addLambdaMetricAlarms({
+      stack: this,
+      id: 'EngineLambda',
+      lambda: this.engineLambda,
+      metricAlarms: [
+        { metric: LambdaMetric.ERRORS },
+        { metric: LambdaMetric.DURATION },
+      ],
     })
 
     this.engineLambdaAlias = new Alias(this, 'EngineLambdaAlias', {
