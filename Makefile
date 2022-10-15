@@ -79,6 +79,9 @@ bootstrap-secret-key:
 .PHONY: ci
 ci: clean build-lambdas build-infra
 
+.PHONY: build
+build: clean build-lambdas build-infra
+
 .PHONY: build-lambdas
 build-lambdas:
 	@cd lambdas/go-app && make build
