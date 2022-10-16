@@ -1,12 +1,5 @@
 project: CdkATT
 
-apps:
-  - deployer-glb
-  - monitor-glb
-  - monitor
-  - be
-  - fe
-
 secrets:
   keyRegion: eu-central-1
 
@@ -24,6 +17,13 @@ stages:
     tracingEnabled: true
     removalPolicy: destroy
     logRetentionDays: 7
+
+apps:
+  - deployer-glb
+  - monitor-glb
+  - monitor
+  - be
+  - fe
 
 deployer-glb:
   common:
