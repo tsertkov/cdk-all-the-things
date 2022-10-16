@@ -125,6 +125,7 @@ export class StateStack extends NestedStackBase {
     this.deployerEcrRepo = new Repository(this, 'DeployerEcrRepo', {
       repositoryName: this.deployerRepoName(this.config.stageName),
       removalPolicy: this.config.removalPolicy,
+      imageScanOnPush: true,
     })
 
     this.deployerEcrRepo.addLifecycleRule({
