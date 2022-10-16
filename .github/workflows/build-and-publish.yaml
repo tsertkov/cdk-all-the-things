@@ -28,9 +28,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set outputs
+    - name: Prepare vars
       id: vars
       run: |
+        echo "Preparing variables"
         ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
         ecr_repo=${ecr_repo,,}
         echo "ecr_repo=${ecr_repo}" >> $GITHUB_OUTPUT
@@ -50,6 +51,7 @@ jobs:
     - name: Build infra deployer image
       id: build-image
       run: |
+        echo "Building deployer container image"
         make build
         image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.ecr_repo }}:${{ inputs.version }}
         docker tag infra $image
@@ -57,4 +59,5 @@ jobs:
 
     - name: Upload image to ECR
       run: |
+        echo "Uploading deployer container image to ECR"
         docker push ${{ steps.build-image.outputs.image }}

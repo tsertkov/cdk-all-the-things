@@ -26,9 +26,10 @@ jobs:
       contents: read
 
     steps:
-    - name: Set outputs
+    - name: Prepare vars
       id: vars
       run: |
+        echo "Preparing variables"
         src_ecr_repo=${{ secrets.project }}-${{ inputs.src_stage }}-${{ inputs.name }}
         dst_ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
         echo "src_ecr_repo=${src_ecr_repo,,}" >> $GITHUB_OUTPUT
@@ -49,6 +50,7 @@ jobs:
     - name: Pull container image from src stage
       id: pull-image
       run: |
+        echo "Downloading deployer container image from src ECR"
         image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.src_ecr_repo }}:${{ inputs.version }}
         docker pull $image
         echo "src_image=${image}" >> $GITHUB_OUTPUT
@@ -56,6 +58,7 @@ jobs:
     - name: Push container image to dst stage
       id: push-image
       run: |
+        echo "Uploading deployer container image to dst ECR"
         image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.dst_ecr_repo }}:${{ inputs.version }}
         docker tag ${{ steps.pull-image.outputs.src_image }} $image
         docker push $image
