@@ -1,10 +1,10 @@
 import { Construct } from 'constructs'
+import { LogGroup } from 'aws-cdk-lib/aws-logs'
+import { CfnGroup } from 'aws-cdk-lib/aws-resourcegroups'
 import {
   NestedStackBase,
   NestedStackBaseProps,
 } from '../../lib/nested-stack-base'
-import { LogGroup } from 'aws-cdk-lib/aws-logs'
-import { CfnGroup } from 'aws-cdk-lib/aws-resourcegroups'
 import { MonitorStageProps } from './monitor-config'
 
 export class StateStack extends NestedStackBase {

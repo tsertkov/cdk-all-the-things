@@ -6,12 +6,13 @@ import monitor from '../apps/monitor'
 
 let infra: Infra
 let stage: AppStage
+const APP_NAME = 'monitor'
 
 beforeAll(() => {
   const config = new monitor.Config(
     ['config.yaml'],
     path.join(__dirname, '../..'),
-    'monitor'
+    APP_NAME
   )
   infra = new Infra(config, monitor.AppStack)
 
@@ -19,7 +20,7 @@ beforeAll(() => {
   stage = infra.stages[0]
 })
 
-describe('monitor', () => {
+describe(APP_NAME, () => {
   let tpl: Template
   beforeAll(() => (tpl = Template.fromStack(stage.appStack)))
 

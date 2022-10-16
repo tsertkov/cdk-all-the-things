@@ -1,11 +1,5 @@
 import { Construct } from 'constructs'
 import { Arn, ArnFormat, Aws } from 'aws-cdk-lib'
-import {
-  NestedStackBase,
-  NestedStackBaseProps,
-} from '../../lib/nested-stack-base'
-import { StateStack } from './state-stack'
-import { DeployerGlStageProps } from './deployer-gl-config'
 import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline'
 import {
   BuildSpec,
@@ -20,14 +14,20 @@ import {
   S3SourceAction,
   S3Trigger,
 } from 'aws-cdk-lib/aws-codepipeline-actions'
+import {
+  NestedStackBase,
+  NestedStackBaseProps,
+} from '../../lib/nested-stack-base'
 import { deterministicName, regionToCode } from '../../lib/utils'
+import { DeployerGlbStageProps } from './deployer-glb-config'
+import { StateStack } from './state-stack'
 
 export interface DeployerGlStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack
 }
 
-export class DeployerGlStack extends NestedStackBase {
-  readonly config: DeployerGlStageProps
+export class DeployerGlbStack extends NestedStackBase {
+  readonly config: DeployerGlbStageProps
   readonly stateStack: StateStack
   readonly githubOidcProviderArn: string
   readonly codePipelines: Pipeline[] = []
@@ -52,7 +52,7 @@ export class DeployerGlStack extends NestedStackBase {
           this.config.rootConfig.stageConfig(
             this.config.stageName,
             appName
-          ) as DeployerGlStageProps,
+          ) as DeployerGlbStageProps,
           this.config.noApprovalDeploy
         )
       )
@@ -60,7 +60,7 @@ export class DeployerGlStack extends NestedStackBase {
   }
 
   private initCodePipeline(
-    props: DeployerGlStageProps,
+    props: DeployerGlbStageProps,
     noApprovalDeploy: boolean
   ): Pipeline {
     // init deployment code pipeline for given app & regions

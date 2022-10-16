@@ -1,8 +1,8 @@
 import { Construct } from 'constructs'
-import { deterministicName } from '../../lib/utils'
-import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
+import { StackBase, StackBaseProps } from '../../lib/stack-base'
+import { deterministicName } from '../../lib/utils'
 import { FeStageProps } from './fe-config'
 
 export class FeAppStack extends StackBase {

@@ -1,6 +1,6 @@
+import { readFileSync } from 'fs'
 import * as path from 'path'
 import { deepmerge } from 'deepmerge-ts'
-import { readFileSync } from 'fs'
 import { RemovalPolicy } from 'aws-cdk-lib'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { parse } from 'yaml'

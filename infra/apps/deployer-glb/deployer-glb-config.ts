@@ -1,7 +1,7 @@
 import { Config, StageProps } from '../../lib/config'
 import appModules from '..'
 
-export interface DeployerGlStageProps extends StageProps {
+export interface DeployerGlbStageProps extends StageProps {
   readonly githubRepo: string
   readonly githubOidcArnCfnOutput: string
   readonly noApprovalDeploy: boolean
@@ -11,16 +11,16 @@ export interface DeployerGlStageProps extends StageProps {
   appModules: string[]
 }
 
-export class DeployerGlConfig extends Config {
-  get stages(): DeployerGlStageProps[] {
-    return super.stages as DeployerGlStageProps[]
+export class DeployerGlbConfig extends Config {
+  get stages(): DeployerGlbStageProps[] {
+    return super.stages as DeployerGlbStageProps[]
   }
 
-  stageConfig(stageName: string, appName: string): DeployerGlStageProps {
+  stageConfig(stageName: string, appName: string): DeployerGlbStageProps {
     const stageConfig = super.stageConfig(
       stageName,
       appName
-    ) as DeployerGlStageProps
+    ) as DeployerGlbStageProps
     stageConfig.rootConfig = this
     stageConfig.appModules = Object.keys(appModules)
     return stageConfig

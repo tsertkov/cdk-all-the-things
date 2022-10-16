@@ -6,12 +6,13 @@ import be from '../apps/be'
 
 let infra: Infra
 let stage: AppStage
+const APP_NAME = 'be'
 
 beforeAll(() => {
   const config = new be.Config(
     ['config.yaml'],
     path.join(__dirname, '../..'),
-    'be'
+    APP_NAME
   )
   infra = new Infra(config, be.AppStack)
 
@@ -19,7 +20,7 @@ beforeAll(() => {
   stage = infra.stages[0]
 })
 
-describe('be', () => {
+describe(APP_NAME, () => {
   let tpl: Template
   beforeAll(() => (tpl = Template.fromStack(stage.appStack)))
 

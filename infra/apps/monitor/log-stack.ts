@@ -1,16 +1,16 @@
 import { Construct } from 'constructs'
+import { CfnDeliveryStream } from 'aws-cdk-lib/aws-kinesisfirehose'
+import { PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
+import { LogStream } from 'aws-cdk-lib/aws-logs'
+import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3'
+import { Arn, Aws } from 'aws-cdk-lib'
+import { deterministicName } from '../../lib/utils'
 import {
   NestedStackBase,
   NestedStackBaseProps,
 } from '../../lib/nested-stack-base'
-import { StateStack } from './state-stack'
-import { CfnDeliveryStream } from 'aws-cdk-lib/aws-kinesisfirehose'
 import { MonitorStageProps } from './monitor-config'
-import { PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
-import { LogStream } from 'aws-cdk-lib/aws-logs'
-import { deterministicName } from '../../lib/utils'
-import { Bucket, IBucket } from 'aws-cdk-lib/aws-s3'
-import { Arn, Aws } from 'aws-cdk-lib'
+import { StateStack } from './state-stack'
 
 export interface LogStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack

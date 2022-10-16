@@ -1,9 +1,9 @@
 import { Construct } from 'constructs'
+import { CfnOutput } from 'aws-cdk-lib'
 import { deterministicName } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { StateStack } from './state-stack'
 import { LogStack } from './log-stack'
-import { CfnOutput } from 'aws-cdk-lib'
 
 export class MonitorAppStack extends StackBase {
   stateStack: StateStack

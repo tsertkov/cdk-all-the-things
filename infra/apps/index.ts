@@ -1,12 +1,12 @@
-import deployerGl from './deployer-gl'
-import monitorGl from './monitor-gl'
+import deployerGlb from './deployer-glb'
+import monitorGlb from './monitor-glb'
 import monitor from './monitor'
 import be from './be'
 import fe from './fe'
 
 export default {
-  'deployer-gl': deployerGl,
-  'monitor-gl': monitorGl,
+  'deployer-glb': deployerGlb,
+  'monitor-glb': monitorGlb,
   monitor,
   be,
   fe,

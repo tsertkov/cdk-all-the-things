@@ -1,18 +1,18 @@
-import { Arn, ArnFormat, Duration, Fn, RemovalPolicy } from 'aws-cdk-lib'
+import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { FederatedPrincipal, PolicyStatement, Role } from 'aws-cdk-lib/aws-iam'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { Repository } from 'aws-cdk-lib/aws-ecr'
+import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import {
   NestedStackBase,
   NestedStackBaseProps,
 } from '../../lib/nested-stack-base'
-import { DeployerGlStageProps } from './deployer-gl-config'
-import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { deterministicName } from '../../lib/utils'
+import { DeployerGlbStageProps } from './deployer-glb-config'
 
 export class StateStack extends NestedStackBase {
-  readonly config: DeployerGlStageProps
+  readonly config: DeployerGlbStageProps
   readonly githubOidcProviderArn: string
   ciRole: Role
   artifactsBucket: Bucket

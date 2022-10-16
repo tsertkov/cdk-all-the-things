@@ -26,22 +26,22 @@ jobs:
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
 
-  deployer-gl:
+  deployer-glb:
     needs: deployer-image
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: deployer-gl
+      app: deployer-glb
       environment: ${{ inputs.environment || 'dev' }}
       version: ${{ needs.deployer-image.outputs.version }}
     secrets: inherit
 
-  monitor-gl:
+  monitor-glb:
     needs:
       - deployer-image
-      - deployer-gl
+      - deployer-glb
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: monitor-gl
+      app: monitor-glb
       environment: ${{ inputs.environment || 'dev' }}
       version: ${{ needs.deployer-image.outputs.version }}
     secrets: inherit
@@ -49,7 +49,7 @@ jobs:
   monitor:
     needs:
       - deployer-image
-      - monitor-gl
+      - monitor-glb
     uses: ./.github/workflows/deploy-stage.yaml
     with:
       app: monitor

@@ -1,5 +1,5 @@
 import { Construct } from 'constructs'
-import { Table, AttributeType } from 'aws-cdk-lib/aws-dynamodb'
+import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import {
   NestedStackBase,

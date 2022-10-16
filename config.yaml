@@ -1,8 +1,8 @@
 project: CdkATT
 
 apps:
-  - deployer-gl
-  - monitor-gl
+  - deployer-glb
+  - monitor-glb
   - monitor
   - be
   - fe
@@ -25,7 +25,7 @@ stages:
     removalPolicy: destroy
     logRetentionDays: 7
 
-deployer-gl:
+deployer-glb:
   common:
     githubRepo: tsertkov/cdk-all-the-things
     githubOidcArnCfnOutput: GithubOidcArn
@@ -41,7 +41,7 @@ deployer-gl:
     prd:
       promotionSrc: stg
 
-monitor-gl:
+monitor-glb:
   common:
     logsBucketName: logs-eeb9aW
     regions:

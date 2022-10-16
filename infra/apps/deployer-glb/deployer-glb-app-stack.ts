@@ -1,15 +1,15 @@
 import { Construct } from 'constructs'
+import { CfnOutput } from 'aws-cdk-lib'
 import { deterministicName } from '../../lib/utils'
 import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { StateStack } from './state-stack'
-import { DeployerGlStack } from './deployer-gl-stack'
-import { CfnOutput } from 'aws-cdk-lib'
-import { DeployerGlStageProps } from './deployer-gl-config'
+import { DeployerGlbStack } from './deployer-glb-stack'
+import { DeployerGlbStageProps } from './deployer-glb-config'
 
-export class DeployerGlAppStack extends StackBase {
-  readonly config: DeployerGlStageProps
+export class DeployerGlbAppStack extends StackBase {
+  readonly config: DeployerGlbStageProps
   stateStack: StateStack
-  deployerStack: DeployerGlStack
+  deployerStack: DeployerGlbStack
 
   constructor(scope: Construct, id: string, props: StackBaseProps) {
     super(scope, id, props)
@@ -22,7 +22,7 @@ export class DeployerGlAppStack extends StackBase {
       config: props.config,
     })
 
-    this.deployerStack = new DeployerGlStack(this, 'Deployer', {
+    this.deployerStack = new DeployerGlbStack(this, 'Deployer', {
       config: props.config,
       stateStack: this.stateStack,
     })

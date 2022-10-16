@@ -1,12 +1,12 @@
 import { Construct } from 'constructs'
-import { deterministicName } from '../../lib/utils'
-import { StackBase, StackBaseProps } from '../../lib/stack-base'
 import { Aws, CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
-import { MonitorGlStageProps } from './monitor-gl-config'
+import { StackBase, StackBaseProps } from '../../lib/stack-base'
+import { deterministicName } from '../../lib/utils'
+import { MonitorGlbStageProps } from './monitor-glb-config'
 
-export class MonitorGlAppStack extends StackBase {
-  readonly config: MonitorGlStageProps
+export class MonitorGlbAppStack extends StackBase {
+  readonly config: MonitorGlbStageProps
   logsBucket: Bucket
 
   constructor(scope: Construct, id: string, props: StackBaseProps) {
