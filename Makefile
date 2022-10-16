@@ -76,9 +76,6 @@ bootstrap-secret-key:
 
 ### build commands
 
-.PHONY: ci
-ci: clean build-lambdas build-infra
-
 .PHONY: build
 build: clean build-lambdas build-infra
 

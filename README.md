@@ -31,7 +31,7 @@ Follow bootstrapping instructions to prepare local and aws environment. Use make
 
 #### Build commands
 
-- `make ci` - build all
+- `make build` - build all
 - `make build-lambdas` - build lambdas
 - `make build-infra` - build infra deployer container image
 - `make clean` - remove compiled lambdas and decrypted secrets
