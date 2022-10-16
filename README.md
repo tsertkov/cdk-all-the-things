@@ -22,21 +22,14 @@ Follow bootstrapping instructions to prepare local and aws environment. Use make
 
 ### Make commands
 
-Bootstrap commands:
+#### Bootstrap commands
 
 - `make init` - install infra dependencies
 - `make bootstrap-cdk` - bootstrap cdk for all apps regions
 - `make bootstrap-github-oidc` - deploy cfn stack with github oidc
 - `make bootstrap-secret-key` - generate age secret key and store it in the cloud
 
-App stack list commands:
-
-- `make ls` - list infra stacks for given region
-- `make lsa` - list infra stacks for all regions
-- `make lsa-all` - list all stacks for all apps
-- `make metadata` - show stacks metadata
-
-Build commands:
+#### Build commands
 
 - `make ci` - build all
 - `make build-lambdas` - build lambdas
@@ -45,7 +38,7 @@ Build commands:
 - `make clean-secrets` - remove decrypted secrets file
 - `make clean-lambdas` - remove compiled lambdas
 
-Secrets commands:
+#### Secrets commands
 
 - `make secrets-decrypt` - decrypt secrets into plan text file
 - `make secrets-encrypt` - encrypt secrets from plan text file
@@ -53,29 +46,36 @@ Secrets commands:
 - `make secrets-aws-update` - set secrets in aws from decrypted secrets
 - `make secrets-aws-delete` - delete secrets in aws set from decrypted secrets
 
-Cdk diff commands:
+#### Cdk commands
+
+Cdk commands support additional arguments: `app`, `stage` and `region`. Their defaults are set in `Makefile` and equal to `make app=deployer-glb stage=dev region='*'`.
+
+list:
+
+- `make ls` - list infra stacks for given region
+- `make lsa` - list infra stacks for all regions
+- `make lsa-all` - list all stacks for all apps
+- `make metadata` - show stacks metadata
+
+diff:
 
 - `make diff` - diff infra changes
 - `make diff-all` - diff infra changes for all apps
 
-Cdk deploy commands:
+deploy:
 
 - `make deploy` - deploy infra & lambdas
 - `make deploy-all` - deploy infra & lambdas for all apps
 
-Cloudformation outputs:
+outputs:
 
 - `make outputs` - display stack outputs
 - `make outputs-all` - display stack outputs from all apps for given region
 
-Cdk destroy commands:
+destroy:
 
 - `make destroy` - destroy stacks
 - `make destroy-all` - destroy stacks from all apps
-
-## Environments
-
-Stages and their environment configurations are defined under `stages` section in `config.yaml`.
 
 ## Applications
 
@@ -90,9 +90,13 @@ User apps:
 - `be` - backend api app (multi-region)
 - `fe` - frontend app (single-region)
 
+## Environments
+
+Stages and their environment configurations are defined under `stages` section in `config.yaml`.
+
 ### Deployment
 
-Deployer-glb application deploys all other applications including self updates.
+deployer-glb application manages deployments of all other applications including delivering self updates.
 
 ![applications deployment](https://user-images.githubusercontent.com/5339042/195422269-3c44f4c6-11b2-4d1f-ab25-40d7243072f6.svg)
 
