@@ -1,4 +1,4 @@
-import { AppModule } from '../app-module'
+import { AppModule } from '../../lib/app-module'
 import { DeployerGlbAppStack as AppStack } from './deployer-glb-app-stack'
 import { DeployerGlbConfig as Config } from './deployer-glb-config'
 

@@ -1,5 +1,5 @@
-import { Config } from '../lib/config'
-import { StackBase } from '../lib/stack-base'
+import { Config } from './config'
+import { StackBase } from './stack-base'
 
 export interface AppModule {
   Config: typeof Config

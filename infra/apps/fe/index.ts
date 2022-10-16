@@ -1,4 +1,4 @@
-import { AppModule } from '../app-module'
+import { AppModule } from '../../lib/app-module'
 import { FeConfig as Config } from './fe-config'
 import { FeAppStack as AppStack } from './fe-app-stack'
 

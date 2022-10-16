@@ -1,4 +1,4 @@
-import { AppModule } from '../app-module'
+import { AppModule } from '../../lib/app-module'
 import { BeAppStack } from './be-app-stack'
 import { BeConfig } from './be-config'
 
