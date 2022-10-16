@@ -6,6 +6,7 @@ export interface DeployerGlStageProps extends StageProps {
   readonly githubOidcArnCfnOutput: string
   readonly noApprovalDeploy: boolean
   readonly promotionSrc: string
+  readonly ecrMaxImageCount: number
   rootConfig: Config
   appModules: string[]
 }

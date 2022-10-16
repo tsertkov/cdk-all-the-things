@@ -29,11 +29,13 @@ deployer-gl:
   common:
     githubRepo: tsertkov/cdk-all-the-things
     githubOidcArnCfnOutput: GithubOidcArn
+    ecrMaxImageCount: 30
     regions:
       - eu-central-1
   stages:
     dev:
       noApprovalDeploy: true
+      ecrMaxImageCount: 10
     stg:
       promotionSrc: dev
     prd:

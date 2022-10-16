@@ -1,4 +1,4 @@
-import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
+import { Arn, ArnFormat, Duration, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { FederatedPrincipal, PolicyStatement, Role } from 'aws-cdk-lib/aws-iam'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
@@ -125,6 +125,10 @@ export class StateStack extends NestedStackBase {
     this.deployerEcrRepo = new Repository(this, 'DeployerEcrRepo', {
       repositoryName: this.deployerRepoName(this.config.stageName),
       removalPolicy: this.config.removalPolicy,
+    })
+
+    this.deployerEcrRepo.addLifecycleRule({
+      maxImageCount: this.config.ecrMaxImageCount,
     })
   }
 
