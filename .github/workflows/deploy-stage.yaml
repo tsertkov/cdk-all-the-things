@@ -118,6 +118,34 @@ jobs:
           exit $?
         done
 
+    - name: Download pipeline execution artifacts
+      run: |
+        echo "Fetching pipeline artifact urls"
+        artifacts="$(aws codepipeline list-action-executions \
+          --region eu-central-1 \
+          --pipeline-name CdkATT-dev-monitor-glb \
+          --filter pipelineExecutionId=872532de-713c-414a-b40b-82149d9559f7 \
+          --query 'actionExecutionDetails[].output.outputArtifacts[]' \
+          | jq '.name')"
+
+        echo "Downloading pipeline artifacts"
+        mkdir pipeline-artifacts
+        cd pipeline-artifacts/
+        for artifact in $artifacts; do
+          local name=${artifact%=*}
+          local url=${artifact#*=}
+          aws s3 cp "$url" "${name}.zip"
+          unzip -f "${name}.zip"
+          rm "${name}.zip"
+        done
+
+    - name: Publish artifacts to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ inputs.app }}-${{ inputs.environment }}-artifacts
+        path: pipeline-artifacts/
+        if-no-files-found: error
+
     - name: Stop pipeline execution
       if: ${{ cancelled() }}
       run: |
