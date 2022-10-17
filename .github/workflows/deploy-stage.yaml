@@ -133,6 +133,7 @@ jobs:
         for artifact in $artifacts; do
           name=${artifact%=*}
           url=${artifact#*=}
+          [ "$name" = "${{ inputs.app }}" ] && continue
           aws s3 cp "$url" "${name}.zip"
           unzip "${name}.zip"
           rm "${name}.zip"
@@ -141,7 +142,7 @@ jobs:
     - name: Publish artifacts to GitHub
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ inputs.app }}-${{ inputs.environment }}-artifacts
+        name: ${{ inputs.app }}-${{ inputs.environment }}
         path: pipeline-artifacts/
         if-no-files-found: error
 
