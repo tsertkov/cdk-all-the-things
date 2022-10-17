@@ -126,7 +126,7 @@ jobs:
           --pipeline-name CdkATT-dev-monitor-glb \
           --filter pipelineExecutionId=872532de-713c-414a-b40b-82149d9559f7 \
           --query 'actionExecutionDetails[].output.outputArtifacts[]' \
-          | jq '.name')"
+          | jq -r '.[] | .name + "=s3://" + .s3location.bucket + "/" + .s3location.key')"
 
         echo "Downloading pipeline artifacts"
         mkdir pipeline-artifacts
