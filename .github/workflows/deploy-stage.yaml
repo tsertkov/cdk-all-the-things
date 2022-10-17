@@ -122,9 +122,8 @@ jobs:
       run: |
         echo "Fetching pipeline artifact urls"
         artifacts="$(aws codepipeline list-action-executions \
-          --region eu-central-1 \
-          --pipeline-name CdkATT-dev-monitor-glb \
-          --filter pipelineExecutionId=872532de-713c-414a-b40b-82149d9559f7 \
+          --pipeline-name ${{ steps.vars.outputs.pipelineName }} \
+          --filter pipelineExecutionId=${{ steps.pipeline.outputs.executionId }} \
           --query 'actionExecutionDetails[].output.outputArtifacts[]' \
           | jq -r '.[] | .name + "=s3://" + .s3location.bucket + "/" + .s3location.key')"
 
