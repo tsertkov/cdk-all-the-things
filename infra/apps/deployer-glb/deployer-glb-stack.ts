@@ -22,6 +22,26 @@ import { deterministicName, regionToCode } from '../../lib/utils'
 import { DeployerGlbStageProps } from './deployer-glb-config'
 import { StateStack } from './state-stack'
 
+const CMD = {
+  ecrLogin: '$(aws ecr get-login --no-include-email)',
+  containerCreds: [
+    'CREDS=$(curl -s 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)',
+    'export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r \'.Token\')',
+    'export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r \'.AccessKeyId\')',
+    'export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r \'.SecretAccessKey\')',
+  ],
+  dockerRun:
+    'docker run -e ' +
+    [
+      'AWS_SESSION_TOKEN',
+      'AWS_ACCESS_KEY_ID',
+      'AWS_SECRET_ACCESS_KEY',
+      'AWS_DEFAULT_REGION',
+      'AWS_REGION',
+      'CI=true',
+    ].join(' -e '),
+}
+
 export interface DeployerGlStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack
 }
@@ -67,7 +87,7 @@ export class DeployerGlbStack extends NestedStackBase {
     const { project, appName, stageName, regions } = props
 
     const pipelineName = `${project}-${stageName}-${appName}`
-    const configArtifact = new Artifact(pipelineName)
+    const configArtifact = new Artifact(appName)
     const bucketKey = `${appName}.zip`
 
     const environmentVariables = {
@@ -94,15 +114,17 @@ export class DeployerGlbStack extends NestedStackBase {
       deployActions.push(
         ...regions.map((region) => {
           const regname = regionToCode(region)
+          const cmd = 'diff'
           return new CodeBuildAction({
             runOrder,
-            actionName: `diff-${regname}`,
+            actionName: `${cmd}-${regname}`,
             project: this.codeBuildRo,
             input: configArtifact,
+            outputs: [new Artifact(`${cmd}-${regname}`)],
             environmentVariables: {
               ...environmentVariables,
               CMD: {
-                value: 'diff',
+                value: cmd,
               },
               REGION: {
                 value: regname,
@@ -126,15 +148,17 @@ export class DeployerGlbStack extends NestedStackBase {
     deployActions.push(
       ...regions.map((region) => {
         const regname = regionToCode(region)
+        const cmd = 'deploy'
         return new CodeBuildAction({
           runOrder,
-          actionName: `deploy-${regname}`,
+          actionName: `${cmd}-${regname}`,
           project: this.codeBuildRw,
           input: configArtifact,
+          outputs: [new Artifact(`${cmd}-${regname}`)],
           environmentVariables: {
             ...environmentVariables,
             CMD: {
-              value: 'deploy',
+              value: cmd,
             },
             REGION: {
               value: regname,
@@ -161,6 +185,7 @@ export class DeployerGlbStack extends NestedStackBase {
   }
 
   private createCodeBuild(rw: boolean) {
+    const logsDirectory = 'logs'
     const projectName = deterministicName(
       {
         region: null,
@@ -190,29 +215,24 @@ export class DeployerGlbStack extends NestedStackBase {
         },
         buildSpec: BuildSpec.fromObject({
           version: '0.2',
+          artifacts: {
+            'base-directory': logsDirectory,
+            files: ['**/*'],
+          },
           phases: {
             install: {
               commands: [
-                'CREDS=$(curl -s 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)',
-                'export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r \'.Token\')',
-                'export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r \'.AccessKeyId\')',
-                'export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r \'.SecretAccessKey\')',
-                '$(aws ecr get-login --no-include-email)',
+                ...CMD.containerCreds,
+                CMD.ecrLogin,
                 'export IMAGE=${DEPLOYER_IMAGE}:$(cat $APP)',
                 'docker pull $IMAGE',
               ],
             },
             build: {
               commands: [
-                [
-                  'docker run',
-                  '-e AWS_SESSION_TOKEN',
-                  '-e AWS_ACCESS_KEY_ID',
-                  '-e AWS_SECRET_ACCESS_KEY',
-                  '-e AWS_DEFAULT_REGION',
-                  '-e AWS_REGION',
-                  '--rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD',
-                ].join(' '),
+                `mkdir ${logsDirectory}`,
+                `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD` +
+                  ` | tee "${logsDirectory}/$APP-$STAGE-$REGION"`,
               ],
             },
           },
