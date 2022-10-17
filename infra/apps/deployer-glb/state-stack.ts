@@ -56,7 +56,8 @@ export class StateStack extends NestedStackBase {
     })
 
     // grant permission to write to artifacts bucket
-    this.artifactsBucket.grantWrite(this.ciRole)
+    this.artifactsBucket.grantWrite(this.ciRole, '*.zip')
+    this.artifactsBucket.grantRead(this.ciRole)
 
     // grant permission to push container images to ecr
     this.ciRole.addToPolicy(
@@ -73,6 +74,7 @@ export class StateStack extends NestedStackBase {
           'codepipeline:StartPipelineExecution',
           'codepipeline:GetPipelineExecution',
           'codepipeline:StopPipelineExecution',
+          'codepipeline:ListActionExecutions',
         ],
         resources: [
           Arn.format(
