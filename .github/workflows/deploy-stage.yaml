@@ -132,8 +132,8 @@ jobs:
         mkdir pipeline-artifacts
         cd pipeline-artifacts/
         for artifact in $artifacts; do
-          local name=${artifact%=*}
-          local url=${artifact#*=}
+          name=${artifact%=*}
+          url=${artifact#*=}
           aws s3 cp "$url" "${name}.zip"
           unzip -f "${name}.zip"
           rm "${name}.zip"
