@@ -135,7 +135,7 @@ jobs:
           name=${artifact%=*}
           url=${artifact#*=}
           aws s3 cp "$url" "${name}.zip"
-          unzip -f "${name}.zip"
+          unzip "${name}.zip"
           rm "${name}.zip"
         done
 
