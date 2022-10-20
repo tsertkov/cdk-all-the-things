@@ -13,6 +13,7 @@ config_file := config.yaml
 secrets_sops_file := secrets.sops.yaml
 secrets_file := secrets.yaml
 secret_name := age-key
+sops_version := v3.7.3
 secret_region ?= $(shell yq '.secrets.keyRegion' $(config_file))
 key_file := key.txt
 public_key ?= $(shell grep '^\# public key: ' key.txt | sed 's/^.*: //')
@@ -85,7 +86,11 @@ build-lambdas:
 
 .PHONY: build-infra
 build-infra:
-	@docker build --platform $(image_platform) -t $(image_name):$(image_tag) .
+	@docker build \
+		--build-arg sops_version=$(sops_version) \
+		--platform $(image_platform) \
+		-t $(image_name):$(image_tag) \
+		.
 
 ### clean commands
 

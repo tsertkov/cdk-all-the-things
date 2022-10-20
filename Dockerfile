@@ -19,6 +19,7 @@ RUN set -e; \
 	cp -r go-app/bin package/go-app
 
 FROM node:16-alpine
+ARG sops_version
 ENTRYPOINT [ "/usr/bin/make" ]
 CMD []
 WORKDIR /app
@@ -27,9 +28,9 @@ RUN set -e; \
 	apk add --no-cache make aws-cli yq; \
 	# install sops
 	cd /usr/local/bin; \
-	wget https://github.com/mozilla/sops/releases/download/v3.7.3/sops-v3.7.3.linux.amd64; \
-	chmod +x sops-v3.7.3.linux.amd64; \
-	mv sops-v3.7.3.linux.amd64 sops
+	wget https://github.com/mozilla/sops/releases/download/${sops_version}/sops-${sops_version}.linux.amd64; \
+	chmod +x sops-${sops_version}.linux.amd64; \
+	mv sops-${sops_version}.linux.amd64 sops
 COPY config.yaml .
 COPY secrets.sops.yaml .
 COPY Makefile .
