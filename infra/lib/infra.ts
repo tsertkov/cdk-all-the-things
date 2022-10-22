@@ -21,7 +21,12 @@ export class Infra {
           new AppStage(this.app, {
             appStackClass,
             config: stageConfig,
-            stageProps: { env: { region } },
+            stageProps: {
+              env: {
+                account: stageConfig.account,
+                region,
+              },
+            },
           })
         )
       )

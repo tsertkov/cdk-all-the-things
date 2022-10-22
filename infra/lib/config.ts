@@ -6,6 +6,7 @@ import { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { parse } from 'yaml'
 
 export interface StageProps {
+  readonly account?: string
   readonly project: string
   readonly appName: string
   readonly stageName: string

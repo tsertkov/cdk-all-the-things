@@ -4,6 +4,7 @@ secrets:
   keyRegion: eu-central-1
 
 common:
+  account: null
   removalPolicy: retain
   logRetentionDays: 90
   tracingEnabled: false
