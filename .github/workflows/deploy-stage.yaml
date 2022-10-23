@@ -39,7 +39,7 @@ jobs:
       with:
         aws-region: ${{ secrets.aws_global_region }}
         role-session-name: deploy-stage-${{ secrets.stage }}
-        role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ secrets.aws_ci_role_name }}
+        role-to-assume: ${{ secrets.aws_ci_role_arn }}
         role-duration-seconds: 3600
 
     - name: Upload deployment artifact to S3

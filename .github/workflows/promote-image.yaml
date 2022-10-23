@@ -30,36 +30,38 @@ jobs:
       id: vars
       run: |
         echo "Preparing variables"
+        src_ecr_registry=${{ secrets.src_aws_account_id }}.drk.ecr.${{ secrets.aws_global_region }}.amazonaws.com
+        dst_ecr_registry=${{ secrets.aws_account_id }}.drk.ecr.${{ secrets.aws_global_region }}.amazonaws.com
         src_ecr_repo=${{ secrets.project }}-${{ inputs.src_stage }}-${{ inputs.name }}
         dst_ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
-        echo "src_ecr_repo=${src_ecr_repo,,}" >> $GITHUB_OUTPUT
-        echo "dst_ecr_repo=${dst_ecr_repo,,}" >> $GITHUB_OUTPUT
+        echo "src_ecr_repo=${src_ecr_registry}/${src_ecr_repo,,}" >> $GITHUB_OUTPUT
+        echo "dst_ecr_repo=${dst_ecr_registry}${dst_ecr_repo,,}" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1.7.0
       with:
         aws-region: ${{ secrets.aws_global_region }}
         role-session-name: ${{ secrets.project }}-${{ secrets.stage }}-promote
-        role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ secrets.aws_ci_role_name }}
+        role-to-assume: ${{ secrets.aws_ci_role_arn }}
         role-duration-seconds: 3600
 
     - name: Login to Amazon ECR
-      id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1.5.1
+      with:
+        registries: ${{ secrets.aws_account_id }},${{ secrets.src_aws_account_id }}
 
     - name: Pull container image from src stage
       id: pull-image
       run: |
         echo "Downloading deployer container image from src ECR"
-        image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.src_ecr_repo }}:${{ inputs.version }}
+        image=${{ steps.vars.outputs.src_ecr_repo }}:${{ inputs.version }}
         docker pull $image
         echo "src_image=${image}" >> $GITHUB_OUTPUT
 
     - name: Push container image to dst stage
-      id: push-image
       run: |
         echo "Uploading deployer container image to dst ECR"
-        image=${{ steps.login-ecr.outputs.registry }}/${{ steps.vars.outputs.dst_ecr_repo }}:${{ inputs.version }}
+        image=${{ steps.vars.outputs.dst_ecr_repo }}:${{ inputs.version }}
         docker tag ${{ steps.pull-image.outputs.src_image }} $image
         docker push $image
         echo "dst_image=${image}" >> $GITHUB_OUTPUT
