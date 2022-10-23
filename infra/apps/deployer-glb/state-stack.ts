@@ -1,7 +1,6 @@
 import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
-  AccountPrincipal,
   AnyPrincipal,
   FederatedPrincipal,
   PolicyStatement,
