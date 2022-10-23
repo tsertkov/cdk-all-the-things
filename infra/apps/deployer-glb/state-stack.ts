@@ -1,4 +1,4 @@
-import { Arn, ArnFormat, Aws, Fn, RemovalPolicy } from 'aws-cdk-lib'
+import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
   ArnPrincipal,
