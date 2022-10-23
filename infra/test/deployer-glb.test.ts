@@ -25,7 +25,7 @@ describe(APP_NAME, () => {
   beforeAll(() => (tpl = Template.fromStack(stage.appStack)))
 
   test('contains expected outputs', () => {
-    tpl.hasOutput('CiRoleName', {})
+    tpl.hasOutput('CiRoleArn', {})
     tpl.hasOutput('DeployerEcrRepoUri', {})
     tpl.hasOutput('ArtifactsBucketName', {})
   })
