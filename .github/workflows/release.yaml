@@ -77,7 +77,7 @@ jobs:
       - version
       - stg-be
       - stg-monitor
-      - stg-deployer
+      - stg-deployer-glb
     uses: ./.github/workflows/promote-image.yaml
     with:
       name: deployer
@@ -100,7 +100,7 @@ jobs:
   prd-monitor-glb:
     needs:
       - version
-      - prd-deployer
+      - prd-deployer-glb
     uses: ./.github/workflows/deploy-stage.yaml
     with:
       app: monitor-glb
