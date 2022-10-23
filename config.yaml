@@ -4,7 +4,6 @@ secrets:
   keyRegion: eu-central-1
 
 common:
-  account: null
   removalPolicy: retain
   logRetentionDays: 90
   tracingEnabled: false
@@ -37,10 +36,9 @@ deployer-glb:
     dev:
       noApprovalDeploy: true
       ecrMaxImageCount: 10
+      nextStage: stg
     stg:
-      promotionSrc: dev
-    prd:
-      promotionSrc: stg
+      nextStage: prd
 
 monitor-glb:
   common:

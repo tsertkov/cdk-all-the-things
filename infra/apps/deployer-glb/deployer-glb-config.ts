@@ -5,8 +5,9 @@ export interface DeployerGlbStageProps extends StageProps {
   readonly githubRepo: string
   readonly githubOidcArnCfnOutput: string
   readonly noApprovalDeploy: boolean
-  readonly promotionSrc: string
+  readonly nextStage?: string
   readonly ecrMaxImageCount: number
+  nextStageConfig?: DeployerGlbStageProps
   rootConfig: Config
   appModules: string[]
 }
@@ -21,8 +22,17 @@ export class DeployerGlbConfig extends Config {
       stageName,
       appName
     ) as DeployerGlbStageProps
+
     stageConfig.rootConfig = this
     stageConfig.appModules = Object.keys(appModules)
+
+    if (stageConfig.nextStage) {
+      stageConfig.nextStageConfig = this.stageConfig(
+        stageConfig.nextStage,
+        appName
+      )
+    }
+
     return stageConfig
   }
 }

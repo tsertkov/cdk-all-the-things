@@ -1,6 +1,11 @@
 import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import { FederatedPrincipal, PolicyStatement, Role } from 'aws-cdk-lib/aws-iam'
+import {
+  ArnPrincipal,
+  FederatedPrincipal,
+  PolicyStatement,
+  Role,
+} from 'aws-cdk-lib/aws-iam'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { Repository } from 'aws-cdk-lib/aws-ecr'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
@@ -41,7 +46,7 @@ export class StateStack extends NestedStackBase {
 
   private initCiRole() {
     const githubSub = `repo:${this.config.githubRepo}:environment:${this.config.stageName}`
-    const federatedPrincipal = new FederatedPrincipal(
+    const githubPrincipal = new FederatedPrincipal(
       this.githubOidcProviderArn,
       {
         StringEqualsIgnoreCase: {
@@ -52,7 +57,11 @@ export class StateStack extends NestedStackBase {
     )
 
     this.ciRole = new Role(this, 'CiRole', {
-      assumedBy: federatedPrincipal,
+      roleName: deterministicName(
+        { name: 'CiRole', app: null, region: null },
+        this
+      ),
+      assumedBy: githubPrincipal,
     })
 
     // grant permission to write to artifacts bucket
@@ -67,6 +76,9 @@ export class StateStack extends NestedStackBase {
       })
     )
 
+    this.deployerEcrRepo.grantPullPush(this.ciRole)
+
+    // allow starting and monitoring pipeline execution
     const pipelineName = `${this.config.project}-${this.config.stageName}-*`
     this.ciRole.addToPolicy(
       new PolicyStatement({
@@ -88,31 +100,6 @@ export class StateStack extends NestedStackBase {
         ],
       })
     )
-
-    this.deployerEcrRepo.grantPullPush(this.ciRole)
-
-    if (this.config.promotionSrc) {
-      // grant pull access to promotionSrc repo
-      this.ciRole.addToPolicy(
-        new PolicyStatement({
-          actions: [
-            'ecr:BatchCheckLayerAvailability',
-            'ecr:BatchGetImage',
-            'ecr:GetDownloadUrlForLayer',
-          ],
-          resources: [
-            Arn.format(
-              {
-                service: 'ecr',
-                resource: 'repository',
-                resourceName: this.deployerRepoName(this.config.promotionSrc),
-              },
-              this
-            ),
-          ],
-        })
-      )
-    }
   }
 
   private initArtifactsBucket() {
@@ -133,6 +120,34 @@ export class StateStack extends NestedStackBase {
     this.deployerEcrRepo.addLifecycleRule({
       maxImageCount: this.config.ecrMaxImageCount,
     })
+
+    // grant pull access to next stage deployer role
+    if (this.config.nextStageConfig) {
+      const nextStageCiRoleArn = Arn.format({
+        account: this.config.nextStageConfig.account,
+        partition: 'aws',
+        region: '',
+        service: 'iam',
+        resource: 'role',
+        resourceName: deterministicName(
+          {
+            name: 'CiRole',
+            stage: this.config.nextStage,
+            region: null,
+            app: null,
+          },
+          this
+        ),
+      })
+
+      this.deployerEcrRepo.addToResourcePolicy(
+        new PolicyStatement({
+          sid: 'PromotionPolicy',
+          actions: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer'],
+          principals: [new ArnPrincipal(nextStageCiRoleArn)],
+        })
+      )
+    }
   }
 
   private deployerRepoName(stageName: string) {
