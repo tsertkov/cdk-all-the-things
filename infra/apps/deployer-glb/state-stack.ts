@@ -1,7 +1,7 @@
 import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
-  ArnPrincipal,
+  AccountPrincipal,
   FederatedPrincipal,
   PolicyStatement,
   Role,
@@ -15,6 +15,8 @@ import {
 } from '../../lib/nested-stack-base'
 import { deterministicName } from '../../lib/utils'
 import { DeployerGlbStageProps } from './deployer-glb-config'
+
+const CI_ROLE_NAME = 'CiRole'
 
 export class StateStack extends NestedStackBase {
   readonly config: DeployerGlbStageProps
@@ -35,6 +37,7 @@ export class StateStack extends NestedStackBase {
     this.initDeployerEcrRepo()
     this.initDeployerLogGroup()
     this.initCiRole()
+    this.initCiRolePromotionGrants()
   }
 
   private initDeployerLogGroup() {
@@ -42,6 +45,49 @@ export class StateStack extends NestedStackBase {
       retention: this.config.logRetentionDays,
       removalPolicy: this.config.removalPolicy,
     })
+  }
+
+  private initCiRolePromotionGrants() {
+    if (!this.config.nextStageConfig) return
+
+    const principal = new AccountPrincipal(
+      this.config.nextStageConfig.account || this.account
+    )
+
+    const nextStageRoleName = deterministicName(
+      {
+        name: CI_ROLE_NAME,
+        stage: this.config.nextStageConfig.stageName,
+        region: null,
+        app: null,
+      },
+      this
+    )
+
+    const conditions = {
+      ArnLike: {
+        'aws:PrincipalArn': Arn.format(
+          {
+            account: '*',
+            region: '',
+            service: 'sts',
+            resource: 'assumed-role',
+            resourceName: `${nextStageRoleName}/*`,
+          },
+          this
+        ),
+      },
+    }
+
+    // grant pulling container images to next stage ci role
+    this.deployerEcrRepo.addToResourcePolicy(
+      new PolicyStatement({
+        sid: 'PromotionPolicy',
+        actions: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer'],
+        principals: [principal],
+        conditions,
+      })
+    )
   }
 
   private initCiRole() {
@@ -56,9 +102,9 @@ export class StateStack extends NestedStackBase {
       'sts:AssumeRoleWithWebIdentity'
     )
 
-    this.ciRole = new Role(this, 'CiRole', {
+    this.ciRole = new Role(this, CI_ROLE_NAME, {
       roleName: deterministicName(
-        { name: 'CiRole', app: null, region: null },
+        { name: CI_ROLE_NAME, app: null, region: null },
         this
       ),
       assumedBy: githubPrincipal,
@@ -120,35 +166,6 @@ export class StateStack extends NestedStackBase {
     this.deployerEcrRepo.addLifecycleRule({
       maxImageCount: this.config.ecrMaxImageCount,
     })
-
-    // grant pull access to next stage deployer role
-    if (this.config.nextStageConfig) {
-      const account = this.config.nextStageConfig.account || this.account
-      const nextStageCiRoleArn = Arn.format({
-        account,
-        partition: 'aws',
-        region: '',
-        service: 'iam',
-        resource: 'role',
-        resourceName: deterministicName(
-          {
-            name: 'CiRole',
-            stage: this.config.nextStage,
-            region: null,
-            app: null,
-          },
-          this
-        ),
-      })
-
-      this.deployerEcrRepo.addToResourcePolicy(
-        new PolicyStatement({
-          sid: 'PromotionPolicy',
-          actions: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer'],
-          principals: [new ArnPrincipal(nextStageCiRoleArn)],
-        })
-      )
-    }
   }
 
   private deployerRepoName(stageName: string) {
