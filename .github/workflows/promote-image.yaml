@@ -48,7 +48,7 @@ jobs:
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1.5.1
       with:
-        registries: ${{ secrets.aws_account_id }},${{ secrets.src_aws_account_id }}
+        registries: ${{ secrets.src_aws_account_id }}
 
     - name: Pull container image from src stage
       id: pull-image
@@ -57,6 +57,11 @@ jobs:
         image=${{ steps.vars.outputs.src_ecr_repo }}:${{ inputs.version }}
         docker pull $image
         echo "src_image=${image}" >> $GITHUB_OUTPUT
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1.5.1
+      with:
+        registries: ${{ secrets.aws_account_id }}
 
     - name: Push container image to dst stage
       run: |
