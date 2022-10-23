@@ -1,4 +1,4 @@
-import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
+import { Arn, ArnFormat, Aws, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
   ArnPrincipal,
@@ -123,8 +123,9 @@ export class StateStack extends NestedStackBase {
 
     // grant pull access to next stage deployer role
     if (this.config.nextStageConfig) {
+      const account = this.config.nextStageConfig.account || this.account
       const nextStageCiRoleArn = Arn.format({
-        account: this.config.nextStageConfig.account,
+        account,
         partition: 'aws',
         region: '',
         service: 'iam',
