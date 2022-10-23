@@ -2,6 +2,7 @@ import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
   AccountPrincipal,
+  AnyPrincipal,
   FederatedPrincipal,
   PolicyStatement,
   Role,
@@ -50,9 +51,7 @@ export class StateStack extends NestedStackBase {
   private initCiRolePromotionGrants() {
     if (!this.config.nextStageConfig) return
 
-    const principal = new AccountPrincipal(
-      this.config.nextStageConfig.account || this.account
-    )
+    const principal = new AnyPrincipal()
 
     const nextStageRoleName = deterministicName(
       {
@@ -68,11 +67,11 @@ export class StateStack extends NestedStackBase {
       ArnLike: {
         'aws:PrincipalArn': Arn.format(
           {
-            account: '*',
+            account: this.config.nextStageConfig.account || this.account,
             region: '',
-            service: 'sts',
-            resource: 'assumed-role',
-            resourceName: `${nextStageRoleName}/*`,
+            service: 'iam',
+            resource: 'role',
+            resourceName: nextStageRoleName,
           },
           this
         ),
