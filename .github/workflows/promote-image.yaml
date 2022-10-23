@@ -35,7 +35,7 @@ jobs:
         src_ecr_repo=${{ secrets.project }}-${{ inputs.src_stage }}-${{ inputs.name }}
         dst_ecr_repo=${{ secrets.project }}-${{ secrets.stage }}-${{ inputs.name }}
         echo "src_ecr_repo=${src_ecr_registry}/${src_ecr_repo,,}" >> $GITHUB_OUTPUT
-        echo "dst_ecr_repo=${dst_ecr_registry}${dst_ecr_repo,,}" >> $GITHUB_OUTPUT
+        echo "dst_ecr_repo=${dst_ecr_registry}/${dst_ecr_repo,,}" >> $GITHUB_OUTPUT
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1.7.0
