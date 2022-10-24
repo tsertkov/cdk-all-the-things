@@ -232,7 +232,7 @@ export class DeployerGlbStack extends NestedStackBase {
               commands: [
                 `mkdir ${logsDirectory}`,
                 `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD` +
-                  ` | tee "${logsDirectory}/$APP-$STAGE-$REGION"`,
+                  ` | tee "${logsDirectory}/$CMD-APP-$STAGE-$REGION"`,
               ],
             },
           },
