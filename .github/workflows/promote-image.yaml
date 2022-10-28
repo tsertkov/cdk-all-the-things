@@ -46,7 +46,7 @@ jobs:
         role-duration-seconds: 3600
 
     - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v1.5.1
+      uses: aws-actions/amazon-ecr-login@v1.5.2
       with:
         registries: ${{ secrets.aws_account_id }},${{ secrets.src_aws_account_id }}
 
