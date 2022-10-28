@@ -7,6 +7,9 @@ image_tag := latest
 
 # vars
 
+.SHELLFLAGS := -eu -o pipefail -c 
+SHELL := bash
+
 project ?= $(shell yq '.project' $(config_file))
 image_name := infra
 image_platform := linux/amd64
