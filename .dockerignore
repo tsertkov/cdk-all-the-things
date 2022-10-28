@@ -2,7 +2,11 @@
 .*
 !/infra/
 !/lambdas/
-!config.yaml
-!secrets.sops.yaml
-!Makefile
-!LICENSE
+!/scripts/
+!/secrets/encrypted/
+!/config.yaml
+!/Makefile
+!/LICENSE
+
+/infra/cdk.out/
+/infra/node_modules/

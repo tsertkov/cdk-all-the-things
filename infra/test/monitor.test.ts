@@ -9,12 +9,12 @@ let stage: AppStage
 const APP_NAME = 'monitor'
 
 beforeAll(() => {
-  const config = new monitor.Config(
-    ['config.yaml'],
-    path.join(__dirname, '../..'),
-    APP_NAME
-  )
-  infra = new Infra(config, monitor.AppStack)
+  const { Config, AppStack } = monitor
+  const config = new Config({
+    appName: APP_NAME,
+    configDirPath: path.join(__dirname, '..', '..'),
+  })
+  infra = new Infra(config, AppStack)
 
   // test only first stage
   stage = infra.stages[0]

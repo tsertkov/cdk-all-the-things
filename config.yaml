@@ -1,6 +1,7 @@
 project: CdkATT
 
 secrets:
+  enabled: true
   keyRegion: eu-central-1
 
 common:

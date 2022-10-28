@@ -1,12 +1,14 @@
 FROM node:16 AS build
+
+WORKDIR /app/infra
+COPY infra/package.json infra/package-lock.json .
+RUN npm install
+
 WORKDIR /app
-COPY config.yaml .
-COPY lambdas lambdas
-COPY infra infra
+COPY . .
 RUN set -e; \
 	# infra test & build
 	cd infra; \
-	npm install; \
 	npm run test; \
 	npm run build; \
 	# prepare infra for packaging
@@ -22,7 +24,6 @@ FROM node:16-alpine
 ARG sops_version
 ENTRYPOINT [ "/usr/bin/make" ]
 CMD []
-WORKDIR /app
 RUN set -e; \
 	# install make and aws-cli
 	apk add --no-cache make aws-cli yq; \
@@ -31,12 +32,12 @@ RUN set -e; \
 	wget https://github.com/mozilla/sops/releases/download/${sops_version}/sops-${sops_version}.linux.amd64; \
 	chmod +x sops-${sops_version}.linux.amd64; \
 	mv sops-${sops_version}.linux.amd64 sops
-COPY config.yaml .
-COPY secrets.sops.yaml .
-COPY Makefile .
+WORKDIR /app/infra
+COPY infra/package.json infra/package-lock.json .
+RUN npm install
+
+WORKDIR /app
+COPY Makefile LICENSE config.yaml .
+COPY secrets/encrypted secrets/encrypted
 COPY --from=build /app/lambdas/package ./lambdas
 COPY --from=build /app/infra/package/ ./infra
-RUN set -e; \
-	# install final npm deps
-	cd infra; \
-	npm install --omit=dev

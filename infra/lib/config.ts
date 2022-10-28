@@ -1,9 +1,9 @@
-import { readFileSync } from 'fs'
+import { readdirSync, readFileSync } from 'fs'
 import * as path from 'path'
 import { deepmerge } from 'deepmerge-ts'
 import { RemovalPolicy } from 'aws-cdk-lib'
 import { RetentionDays } from 'aws-cdk-lib/aws-logs'
-import { parse } from 'yaml'
+import { parse as parseYaml } from 'yaml'
 
 export interface StageProps {
   readonly account?: string
@@ -26,20 +26,80 @@ interface RawConfig {
   readonly project: string
 }
 
+export interface ConfigProps {
+  appName: string
+  configDirPath: string
+  configFileName?: string
+  secretsDirName?: string
+  secretsFileRegExp?: RegExp
+}
+
+const DEFAULT_CONFIG_PROPS = {
+  configFileName: 'config.yaml',
+  secretsDirName: 'secrets',
+  secretsFileRegExp: /^config-([^.]+)\.yaml$/,
+}
+
 export class Config {
   private appName: string
-  private projectRootDir: string
   private rawConfig: RawConfig
+  private projectRootDir: string
 
-  constructor(configFiles: string[], projectRootDir: string, appName: string) {
+  constructor(props: ConfigProps) {
+    const {
+      appName,
+      configDirPath,
+      configFileName,
+      secretsDirName,
+      secretsFileRegExp,
+    } = Object.assign({}, DEFAULT_CONFIG_PROPS, props)
+
     this.appName = appName
-    this.projectRootDir = projectRootDir
+    this.projectRootDir = configDirPath
 
-    this.rawConfig = configFiles.reduce((a, file) => {
-      const data = readFileSync(path.join(projectRootDir, file)).toString()
-      const parsed = parse(data)
-      return deepmerge(a, parsed)
-    }, {}) as RawConfig
+    this.rawConfig = this.readConfigs(
+      configDirPath,
+      configFileName,
+      secretsDirName,
+      secretsFileRegExp
+    )
+  }
+
+  private readConfigs(
+    configDirPath: string,
+    configFileName: string,
+    secretsDirName: string,
+    secretsFileRegExp: RegExp
+  ) {
+    const configs = [
+      this.readConfigFile(path.join(configDirPath, configFileName)),
+    ]
+
+    const secretsDirPath = path.join(configDirPath, secretsDirName)
+    readdirSync(secretsDirPath).forEach((file) => {
+      const m = file.match(secretsFileRegExp)
+      if (!m) return
+
+      const config = this.readConfigFile(path.join(secretsDirPath, file))
+      if (config === null) return
+
+      configs.push(this.readConfigFile(path.join(secretsDirPath, file)))
+    })
+
+    return deepmerge(...configs) as RawConfig
+  }
+
+  private readConfigFile(file: string) {
+    const data = readFileSync(file).toString()
+    const config = parseYaml(data)
+
+    if (typeof config !== 'object') {
+      throw new Error(
+        `Invalid config file (it does not parse to object): ${file}`
+      )
+    }
+
+    return config
   }
 
   stageConfig(stageName: string, appName: string): StageProps {
@@ -47,6 +107,7 @@ export class Config {
     const config = Object.assign(
       {
         project: this.rawConfig.project,
+        projectRootDir: this.projectRootDir,
       },
       this.rawConfig.common,
       this.rawConfig.stages[stageName]
@@ -54,7 +115,6 @@ export class Config {
 
     config.stageName = stageName
     config.appName = appName
-    config.projectRootDir = this.projectRootDir
 
     // add default tags
     config.tags = Object.assign({}, config.tags, {

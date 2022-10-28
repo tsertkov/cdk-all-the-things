@@ -7,27 +7,37 @@ image_tag := latest
 
 # vars
 
+project ?= $(shell yq '.project' $(config_file))
 image_name := infra
 image_platform := linux/amd64
 config_file := config.yaml
-secrets_sops_file := secrets.sops.yaml
-secrets_file := secrets.yaml
-secret_name := age-key
+secrets_enabled ?= $(shell yq .secrets.enabled $(config_file))
+secrets_dir := secrets
+encrypted_secrets_dir := secrets/encrypted
 sops_version := v3.7.3
-secret_region ?= $(shell yq '.secrets.keyRegion' $(config_file))
-key_file := key.txt
-public_key ?= $(shell grep '^\# public key: ' key.txt | sed 's/^.*: //')
+sops_key_file := $(secrets_dir)/.keys/key-$(stage).txt
+sops_cmd := SOPS_AGE_KEY_FILE=$(sops_key_file) sops
+key_secret_name := $(project)/$(stage)/age-key
+key_secret_region ?= $(shell yq '.secrets.keyRegion' $(config_file))
+public_key ?= $(shell grep '^\# public key: ' $(sops_key_file) | sed 's/^.*: //')
 stacks := *-$(stage)-$(region)/$(app)
 app_ext := $(shell test ! -f Dockerfile && echo js || echo ts)
 infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
 apps ?= $(shell yq '.apps' $(config_file) | sed 's/- //' | xargs)
 apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
-project ?= $(shell yq '.project' $(config_file))
 all_regions ?= $(shell yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' config.yaml | sort | uniq)
 aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output text)
-sops_cmd := SOPS_AGE_KEY_FILE=$(key_file) sops
-aws_secrets_cmd := infra/scripts/aws-secrets.sh
-stack_outputs_cmd := infra/scripts/stack-outputs.sh
+aws_secrets_cmd := scripts/aws-secrets.sh
+stack_outputs_cmd := scripts/stack-outputs.sh
+
+ifeq ($(secrets_enabled),true)
+	ifneq (,$(wildcard $(encrypted_secrets_dir)/config-$(stage).sops.yaml))
+		has_secret_config = true
+	endif
+	ifneq (,$(wildcard $(encrypted_secrets_dir)/secrets-$(stage).sops.yaml))
+		has_secrets = true
+	endif
+endif
 
 # functions
 
@@ -38,20 +48,26 @@ endef
 ### list commands
 
 .PHONY: ls
-ls: secrets-decrypt
+ifeq ($(has_secret_config),true)
+ls: sops-decrypt-config
+endif
+ls:
 	@$(infra_cmd) ls $(stacks)
 
 .PHONY: lsa
-lsa: secrets-decrypt
+ifeq ($(has_secret_config),true)
+lsa: sops-decrypt-config
+endif
+lsa:
 	@$(infra_cmd) ls "**"
 
-PHONY: lsa-all
+.PHONY: lsa-all
 lsa-all:
 	@$(call iterate_apps,lsa)
 
 ### init commands
 
-PHONY: init
+.PHONY: init
 init:
 	@cd infra && npm i
 
@@ -68,10 +84,12 @@ bootstrap-github-oidc:
 		--template-body file://infra/bootstrap/github-oidc.cfn.yaml
 
 .PHONY: bootstrap-secret-key
-bootstrap-secret-key: secret_create_or_update_args := $(project)/$(secret_name) --region $(secret_region) --secret-string "$$(cat $(key_file))"
+bootstrap-secret-key: secret_create_or_update_args := $(key_secret_name) --region $(key_secret_region) --secret-string "$$(cat $(sops_key_file))"
 bootstrap-secret-key:
-	@test -f $(key_file) && echo "Secrets key file already exits" && exit 1 ; \
-	age-keygen -o $(key_file); \
+	@test -f $(sops_key_file) \
+		&& echo "Secrets key file already exits: '$(sops_key_file)'" \
+		&& exit 1 ; \
+	age-keygen -o $(sops_key_file); \
 	aws secretsmanager create-secret --name $(secret_create_or_update_args) 2>/dev/null \
 		||	aws secretsmanager update-secret --secret-id $(secret_create_or_update_args)
 
@@ -101,54 +119,59 @@ clean:
 
 .PHONY: clean-secrets
 clean-secrets:
-	@rm -f $(key_file) $(secrets_file)
+	$(info Removing decrypted secret files)
+	@rm -f $(sops_key_file) $(secrets_dir)/{config,secrets}-*.yaml
 
 .PHONY: clean-lambdas
 clean-lambdas:
+	$(info Removing compiled lambdas)
 	@rm -rf lambdas/*/bin/*
 
 ### secrets commands
 
-$(key_file):
+$(sops_key_file):
+	$(info Fetching secret key: $(key_secret_name) to: $(sops_key_file))
 	@aws secretsmanager describe-secret \
-		--region $(secret_region) \
-		--secret-id $(project)/$(secret_name) \
-		> /dev/null
-	@aws secretsmanager get-secret-value \
-		--region $(secret_region) \
-		--secret-id $(project)/$(secret_name) \
+		--region $(key_secret_region) \
+		--secret-id $(key_secret_name) \
+		> /dev/null || exit 1 && \
+	aws secretsmanager get-secret-value \
+		--region $(key_secret_region) \
+		--secret-id $(key_secret_name) \
 		--query SecretString \
 		--output text \
-		> $(key_file)
+		> $(sops_key_file)
 
-.PHONY: $(secrets_file)
-$(secrets_file): $(key_file)
-	@$(sops_cmd) -d $(secrets_sops_file) > $(secrets_file)
+sops-edit-%: $(sops_key_file)
+	@$(sops_cmd) --age $(public_key) $(encrypted_secrets_dir)/$(*)-$(stage).sops.yaml
 
-.PHONY: secrets-decrypt
-secrets-decrypt: $(secrets_file)
+.PHONY: sops-encrypt-%
+sops-encrypt-%: $(sops_key_file) check-secret-file-exists-%-$(stage)
+	@$(sops_cmd) -e --age $(public_key) $(secrets_dir)/$(*)-$(stage).yaml \
+		> $(encrypted_secrets_dir)/$(*)-$(stage).sops.yaml
 
-.PHONY: secrets-encrypt
-secrets-encrypt: $(key_file)
-	@test ! -f $(secrets_file) && echo $(secrets_file) does not exists && exit 1; \
-	$(sops_cmd) -e --age $(public_key) $(secrets_file) > $(secrets_sops_file)
-
-.PHONY: secrets-edit
-secrets-edit: $(key_file)
-	@$(sops_cmd) --age $(public_key) $(secrets_sops_file)
+.PHONY: sops-decrypt-%
+sops-decrypt-%: $(sops_key_file) check-encrypted-secret-file-exists-%-$(stage)
+	@$(sops_cmd) -d $(encrypted_secrets_dir)/$(*)-$(stage).sops.yaml \
+		> $(secrets_dir)/$(*)-$(stage).yaml
 
 .PHONY: secrets-aws-update
-secrets-aws-update: secrets-decrypt
-	@$(aws_secrets_cmd) update "$(stage)" "$(app)" "$(region)"
+secrets-aws-update: check-exact-region-set sops-decrypt-secrets
+	@$(aws_secrets_cmd) update "$(project)/$(stage)/$(app)/" "$(region)" "$(app)" "$(secrets_dir)/secrets-$(stage).yaml"
 
 .PHONY: secrets-aws-delete
-secrets-aws-delete: secrets-decrypt
-	@$(aws_secrets_cmd) delete "$(stage)" "$(app)" "$(region)"
+secrets-aws-delete: check-exact-region-set
+	@for secret_name in $$(aws secretsmanager list-secrets --filters Key=name,Values=$(project)/$(stage)/$(app)/ --query 'SecretList[].Name' --output text); do \
+		$(aws_secrets_cmd) delete "$$secret_name" "$(region)"; \
+	done
 
 ### cdk commands
 
 .PHONY: diff
-diff: secrets-decrypt
+ifeq ($(has_secret_config),true)
+diff: sops-decrypt-config
+endif
+diff:
 	@$(infra_cmd) diff $(stacks)
 
 .PHONY: diff-all
@@ -156,9 +179,14 @@ diff-all:
 	@$(call iterate_apps,diff)
 
 .PHONY: deploy
-deploy: secrets-decrypt
+ifeq ($(has_secret_config),true)
+deploy: sops-decrypt-config
 	@$(infra_cmd) deploy $(stacks)
 	@$(MAKE) -s secrets-aws-update
+else
+deploy:
+	@$(infra_cmd) deploy $(stacks)
+endif
 
 .PHONY: deploy-all
 deploy-all:
@@ -166,7 +194,7 @@ deploy-all:
 
 .PHONY: destroy
 destroy:
-	@test "$(shell read -p "Are you sure you want to delete: $(stacks) (y/n)? " confirmed; echo $$confirmed)" = "y" \
+	@test "$$(read -p "Are you sure you want to delete: $(stacks) (y/n)? " confirmed; echo $$confirmed)" = "y" \
 		&& (($(infra_cmd) destroy -f $(stacks)) && $(MAKE) -s secrets-aws-delete) || true
 
 .PHONY: destroy-all
@@ -179,7 +207,7 @@ metadata:
 
 .PHONY: outputs
 outputs:
-	@for stack in $(shell $(infra_cmd) ls $(stacks) 2>/dev/null); do \
+	@for stack in $$($(infra_cmd) ls $(stacks) 2>/dev/null); do \
 		echo $$stack:; \
 		$(stack_outputs_cmd) $$stack; \
 	done
@@ -187,3 +215,27 @@ outputs:
 .PHONY: outputs-all
 outputs-all:
 	@$(call iterate_apps,outputs)
+
+### validation targets
+
+.PHONY: check-exact-region-set
+check-exact-region-set:
+ifeq ($(region),*)
+	$(error Exactly one region must be given. Received '$(region)')
+endif
+
+.PHONY: check-secret-file-exists-%
+check-secret-file-exists-%:
+	@test -f "$(secrets_dir)/$(*).yaml" \
+		|| ( \
+			echo "Required file does not exist: $(secrets_dir)/$(*).yaml" \
+			&& exit 1 \
+		)
+
+.PHONY: check-encrypted-secret-file-exists-%
+check-encrypted-secret-file-exists-%:
+	@test -f "$(encrypted_secrets_dir)/$(*).sops.yaml" \
+		|| ( \
+			echo "Required file does not exist: $(encrypted_secrets_dir)/$(*).sops.yaml" \
+			&& exit 1 \
+		)

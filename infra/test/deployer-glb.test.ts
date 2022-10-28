@@ -9,12 +9,12 @@ let stage: AppStage
 const APP_NAME = 'deployer-glb'
 
 beforeAll(() => {
-  const config = new deployerGlb.Config(
-    ['config.yaml'],
-    path.join(__dirname, '../..'),
-    APP_NAME
-  )
-  infra = new Infra(config, deployerGlb.AppStack)
+  const { Config, AppStack } = deployerGlb
+  const config = new Config({
+    appName: APP_NAME,
+    configDirPath: path.join(__dirname, '..', '..'),
+  })
+  infra = new Infra(config, AppStack)
 
   // test only first stage
   stage = infra.stages[0]
