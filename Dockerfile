@@ -1,4 +1,4 @@
-FROM node:16 AS build
+FROM node:18 AS build
 
 WORKDIR /app/infra
 COPY infra/package.json infra/package-lock.json .
@@ -20,7 +20,7 @@ RUN set -e; \
 	mkdir -p package/go-app; \
 	cp -r go-app/bin package/go-app
 
-FROM node:16-alpine
+FROM node:18-alpine
 ARG sops_version
 ENTRYPOINT [ "/usr/bin/make" ]
 CMD []
