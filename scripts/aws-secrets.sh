@@ -41,8 +41,6 @@ elif [ $operation = "update" ]; then
 
 		aws secretsmanager create-secret --region "$region" --name "$key" --secret-string "$value" 2>/dev/null \
 			|| aws secretsmanager update-secret --region "$region" --secret-id "$key" --secret-string "$value"
-
-		run_secret_operation "$operation" "$region" "$key" "$value"
 	done
 
 else
