@@ -1,7 +1,7 @@
 FROM node:18 AS build
 
 WORKDIR /app/infra
-COPY infra/package.json infra/package-lock.json .
+COPY infra/package.json infra/package-lock.json ./
 RUN npm install
 
 WORKDIR /app
@@ -33,11 +33,11 @@ RUN set -e; \
 	chmod +x sops-${sops_version}.linux.amd64; \
 	mv sops-${sops_version}.linux.amd64 sops
 WORKDIR /app/infra
-COPY infra/package.json infra/package-lock.json .
+COPY infra/package.json infra/package-lock.json ./
 RUN npm install
 
 WORKDIR /app
-COPY Makefile LICENSE config.yaml .
+COPY Makefile LICENSE config.yaml ./
 COPY secrets/encrypted secrets/encrypted
 COPY --from=build /app/lambdas/package ./lambdas
 COPY --from=build /app/infra/package/ ./infra
