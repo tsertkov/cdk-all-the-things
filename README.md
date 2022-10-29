@@ -18,7 +18,6 @@ Follow bootstrapping instructions to prepare local and aws environment. Use make
 - `make bootstrap-cdk` - Bootstrap cdk for all apps regions
 - `make bootstrap-github-oidc` - Optionally bootstrap github oidc if Github Actions are used for deployments
 - `make bootstrap-secret-key` - Generage age secret key and store it in the cloud
-- `cp secrets-example.yaml secrets.yaml && make secrets-encrypt` - Encrypt provided example secrets
 
 ### Make commands
 
@@ -40,11 +39,11 @@ Follow bootstrapping instructions to prepare local and aws environment. Use make
 
 #### Secrets commands
 
-- `make secrets-decrypt` - decrypt secrets into plan text file
-- `make secrets-encrypt` - encrypt secrets from plan text file
-- `make secrets-edit` - edit encrypted secrets file or create new
+- `make sops-edit-(config|secrets)` - edit encrypted secrets file or create new one
+- `make sops-decrypts-(config|secrets)` - decrypt secrets into plan text file
+- `make sops-encrypt-(config|secrets)` - encrypt secrets from plan text file
 - `make secrets-aws-update` - set secrets in aws from decrypted secrets
-- `make secrets-aws-delete` - delete secrets in aws set from decrypted secrets
+- `make secrets-aws-delete region=euc1` - delete secrets in aws
 
 #### Cdk commands
 
