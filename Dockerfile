@@ -38,7 +38,7 @@ COPY infra/package.json infra/package-lock.json ./
 RUN npm install
 
 WORKDIR /app
-COPY Makefile LICENSE config.yaml ./
-COPY secrets/encrypted secrets/encrypted
 COPY --from=build /app/lambdas/package ./lambdas
 COPY --from=build /app/infra/package/ ./infra
+COPY Makefile LICENSE config.yaml ./
+COPY secrets ./secrets

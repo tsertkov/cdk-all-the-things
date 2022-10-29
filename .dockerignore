@@ -3,6 +3,7 @@
 !/infra/
 !/lambdas/
 !/scripts/
+!/secrets/.keys/.gitignore
 !/secrets/encrypted/
 !/config.yaml
 !/Makefile
