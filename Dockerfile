@@ -22,6 +22,7 @@ RUN set -e; \
 
 FROM node:18-alpine
 ARG sops_version
+ENV CI=true
 ENTRYPOINT [ "/usr/bin/make" ]
 CMD []
 RUN set -e; \

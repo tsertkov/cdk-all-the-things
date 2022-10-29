@@ -38,7 +38,6 @@ const CMD = {
       'AWS_SECRET_ACCESS_KEY',
       'AWS_DEFAULT_REGION',
       'AWS_REGION',
-      'CI=true',
     ].join(' -e '),
 }
 
