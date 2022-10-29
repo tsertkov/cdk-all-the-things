@@ -225,11 +225,12 @@ export class DeployerGlbStack extends NestedStackBase {
                 CMD.ecrLogin,
                 'export IMAGE=${DEPLOYER_IMAGE}:$(cat $APP)',
                 'docker pull $IMAGE',
+                `mkdir ${logsDirectory}`,
               ],
             },
             build: {
               commands: [
-                `mkdir ${logsDirectory}`,
+                `set -eu -o pipefail`,
                 `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD` +
                   ` | tee "${logsDirectory}/$CMD-$APP-$STAGE-$REGION"`,
               ],
