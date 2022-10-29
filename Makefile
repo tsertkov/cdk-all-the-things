@@ -7,7 +7,7 @@ image_tag := latest
 
 # vars
 
-.SHELLFLAGS := -eu -o pipefail -c 
+.SHELLFLAGS := -eu -c 
 SHELL := sh
 
 project ?= $(shell yq '.project' $(config_file))
