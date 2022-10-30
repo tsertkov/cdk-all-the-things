@@ -231,7 +231,8 @@ export class DeployerGlbStack extends NestedStackBase {
             build: {
               commands: [
                 `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD` +
-                  ` | tee "${logsDirectory}/$CMD-$APP-$STAGE-$REGION"`,
+                  ` > >(tee -a "${logsDirectory}/$CMD-$APP-$STAGE-$REGION-stdout")` +
+                  ` 2> >(tee -a "${logsDirectory}/$CMD-$APP-$STAGE-$REGION-stderr")`,
               ],
             },
           },
