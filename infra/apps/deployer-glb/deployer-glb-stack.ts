@@ -219,7 +219,7 @@ export class DeployerGlbStack extends NestedStackBase {
             files: ['**/*'],
           },
           phases: {
-            install: {
+            pre_build: {
               commands: [
                 ...CMD.containerCreds,
                 CMD.ecrLogin,
@@ -231,8 +231,8 @@ export class DeployerGlbStack extends NestedStackBase {
             build: {
               commands: [
                 `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD` +
-                  ` > >(tee -a "${logsDirectory}/$CMD-$APP-$STAGE-$REGION-stdout")` +
-                  ` 2> >(tee -a "${logsDirectory}/$CMD-$APP-$STAGE-$REGION-stderr")`,
+                  `|& tee ${logsDirectory}/$CMD-$APP-$STAGE-$REGION`,
+                'test ${PIPESTATUS[0]} -eq 0',
               ],
             },
           },
