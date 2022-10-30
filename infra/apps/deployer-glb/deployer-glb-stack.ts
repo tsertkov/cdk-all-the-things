@@ -91,7 +91,7 @@ export class DeployerGlbStack extends NestedStackBase {
 
     const environmentVariables = {
       CMD: { value: 'ls' },
-      REGION: { value: '*' },
+      REGCODE: { value: '*' },
       APP: { value: appName },
       STAGE: { value: stageName },
     }
@@ -125,7 +125,7 @@ export class DeployerGlbStack extends NestedStackBase {
               CMD: {
                 value: cmd,
               },
-              REGION: {
+              REGCODE: {
                 value: regname,
               },
             },
@@ -159,7 +159,7 @@ export class DeployerGlbStack extends NestedStackBase {
             CMD: {
               value: cmd,
             },
-            REGION: {
+            REGCODE: {
               value: regname,
             },
           },
@@ -230,9 +230,9 @@ export class DeployerGlbStack extends NestedStackBase {
             },
             build: {
               commands: [
-                `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD` +
-                  `|& tee ${logsDirectory}/$CMD-$APP-$STAGE-$REGION`,
-                'test ${PIPESTATUS[0]} -eq 0',
+                `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" regcode="$REGCODE" $CMD` +
+                  ` |& tee ${logsDirectory}/$APP-$STAGE-$REGCODE.txt` +
+                  ` && test \${PIPESTATUS[0]} -eq 0`,
               ],
             },
           },
