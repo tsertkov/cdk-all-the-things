@@ -43,11 +43,11 @@ Follow bootstrapping instructions to prepare local and aws environment. Use make
 - `make sops-decrypts-(config|secrets)` - decrypt secrets into plan text file
 - `make sops-encrypt-(config|secrets)` - encrypt secrets from plan text file
 - `make secrets-aws-update` - set secrets in aws from decrypted secrets
-- `make secrets-aws-delete region=euc1` - delete secrets in aws
+- `make secrets-aws-delete regcode=euc1` - delete secrets in aws
 
 #### Cdk commands
 
-Cdk commands support additional arguments: `app`, `stage` and `region`. Their defaults are set in `Makefile` and equal to `make app=deployer-glb stage=dev region='*'`.
+Cdk commands support additional arguments: `app`, `stage` and `regcode`. Their defaults are set in `Makefile` and equal to `make app=deployer-glb stage=dev regcode='*'`.
 
 list:
 

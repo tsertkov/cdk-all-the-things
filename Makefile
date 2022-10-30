@@ -1,11 +1,11 @@
-# input params
+### input params
 
 stage := dev
 app := deployer-glb
-region := *
+regcode := *
 image_tag := latest
 
-# vars
+### vars
 
 .SHELLFLAGS := -eu -c 
 SHELL := sh
@@ -23,7 +23,7 @@ sops_cmd := SOPS_AGE_KEY_FILE=$(sops_key_file) sops
 key_secret_name := $(project)/$(stage)/age-key
 key_secret_region ?= $(shell yq '.secrets.keyRegion' $(config_file))
 public_key ?= $(shell grep '^\# public key: ' $(sops_key_file) | sed 's/^.*: //')
-stacks := *-$(stage)-$(region)/$(app)
+stacks := *-$(stage)-$(regcode)/$(app)
 app_ext := $(shell test ! -f Dockerfile && echo js || echo ts)
 infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
 apps ?= $(shell yq '.apps' $(config_file) | sed 's/- //' | xargs)
@@ -33,6 +33,7 @@ aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output t
 aws_secrets_cmd := scripts/aws-secrets.sh
 stack_outputs_cmd := scripts/stack-outputs.sh
 
+# init secrets flags
 ifeq ($(secrets_enabled),true)
 	ifneq (,$(wildcard $(encrypted_secrets_dir)/config-$(stage).sops.yaml))
 		has_secret_config = true
@@ -40,6 +41,13 @@ ifeq ($(secrets_enabled),true)
 	ifneq (,$(wildcard $(encrypted_secrets_dir)/secrets-$(stage).sops.yaml))
 		has_secrets = true
 	endif
+endif
+
+# get app region(s) to work with
+ifeq ($(regcode),*)
+	regions = $(shell yq '.$(app).stages.$(stage).regions // .$(app).common.regions' $(config_file) | sed 's/- //')
+else
+	regions = $(shell source scripts/functions.sh && region_by_code $(regcode))
 endif
 
 # functions
@@ -159,13 +167,15 @@ sops-decrypt-%: $(sops_key_file) check-encrypted-secret-file-exists-%-$(stage)
 		> $(secrets_dir)/$(*)-$(stage).yaml
 
 .PHONY: secrets-aws-update
-secrets-aws-update: check-exact-region-set sops-decrypt-secrets
-	@$(aws_secrets_cmd) update "$(project)/$(stage)/$(app)/" "$(region)" "$(app)" "$(secrets_dir)/secrets-$(stage).yaml"
+secrets-aws-update: sops-decrypt-secrets
+	@for region in $(regions); do \
+		$(aws_secrets_cmd) update "$(project)/$(stage)/$(app)/" "$$region" "$(app)" "$(secrets_dir)/secrets-$(stage).yaml"; \
+	done
 
 .PHONY: secrets-aws-delete
-secrets-aws-delete: check-exact-region-set
-	@for secret_name in $$(aws secretsmanager list-secrets --filters Key=name,Values=$(project)/$(stage)/$(app)/ --query 'SecretList[].Name' --output text); do \
-		$(aws_secrets_cmd) delete "$$secret_name" "$(region)"; \
+secrets-aws-delete:
+	@for region in $(regions); do \
+		$(aws_secrets_cmd) delete "$(project)/$(stage)/$(app)/" "$$region"; \
 	done
 
 ### cdk commands
@@ -220,12 +230,6 @@ outputs-all:
 	@$(call iterate_apps,outputs)
 
 ### validation targets
-
-.PHONY: check-exact-region-set
-check-exact-region-set:
-ifeq ($(region),*)
-	$(error Exactly one region must be given. Received '$(region)')
-endif
 
 .PHONY: check-secret-file-exists-%
 check-secret-file-exists-%:
