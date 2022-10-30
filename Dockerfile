@@ -39,6 +39,7 @@ RUN npm install
 
 WORKDIR /app
 COPY --from=build /app/lambdas/package ./lambdas
-COPY --from=build /app/infra/package/ ./infra
-COPY Makefile LICENSE config.yaml ./
+COPY --from=build /app/infra/package ./infra
+COPY scripts ./scripts
 COPY secrets ./secrets
+COPY Makefile LICENSE config.yaml ./

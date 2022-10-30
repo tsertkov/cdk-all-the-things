@@ -230,7 +230,6 @@ export class DeployerGlbStack extends NestedStackBase {
             },
             build: {
               commands: [
-                `set -eu -o pipefail`,
                 `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" region="$REGION" $CMD` +
                   ` | tee "${logsDirectory}/$CMD-$APP-$STAGE-$REGION"`,
               ],
