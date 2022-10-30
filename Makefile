@@ -194,7 +194,8 @@ diff-all:
 .PHONY: deploy
 ifeq ($(has_secret_config),true)
 deploy: sops-decrypt-config
-	@$(infra_cmd) deploy $(stacks) && $(MAKE) -s secrets-aws-update
+	@$(infra_cmd) deploy $(stacks)
+	@$(MAKE) -s secrets-aws-update
 else
 deploy:
 	@$(infra_cmd) deploy $(stacks)
