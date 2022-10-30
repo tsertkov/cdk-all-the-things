@@ -2,9 +2,6 @@
 
 set -e
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
-source "${DIR}/functions.sh"
-
 operation=$1
 secret_prefix=$2
 region=$3
