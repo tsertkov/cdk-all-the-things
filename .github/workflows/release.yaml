@@ -75,9 +75,7 @@ jobs:
   stg-to-prd:
     needs:
       - version
-      - stg-be
-      - stg-monitor
-      - stg-deployer-glb
+      - stg-fe
     uses: ./.github/workflows/promote-image.yaml
     with:
       name: deployer
