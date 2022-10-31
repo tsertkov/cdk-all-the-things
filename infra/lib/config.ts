@@ -20,8 +20,8 @@ export interface StageProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MapOfAny = Record<string, any>
 
-interface RawConfig {
-  readonly common: MapOfAny
+export interface RawConfig {
+  readonly common?: MapOfAny
   readonly stages: MapOfAny
   readonly project: string
 }
@@ -42,8 +42,8 @@ const DEFAULT_CONFIG_PROPS = {
 
 export class Config {
   private appName: string
-  private rawConfig: RawConfig
   private projectRootDir: string
+  protected rawConfig: RawConfig
 
   constructor(props: ConfigProps) {
     const {
@@ -103,39 +103,32 @@ export class Config {
   }
 
   stageConfig(stageName: string, appName: string): StageProps {
+    const tags = {
+      project: this.rawConfig.project,
+      appname: appName,
+      stage: stageName,
+    }
+
+    const appConfig = this.rawConfig[appName as keyof RawConfig] as MapOfAny
+
     // merge common config with common stage config
-    const config = Object.assign(
+    // with app common config with app stage config
+    return Object.assign(
+      {},
+      this.rawConfig.common,
+      this.rawConfig.stages[stageName],
+      appConfig.common || {},
+      appConfig.stages && appConfig.stages[stageName]
+        ? appConfig.stages[stageName]
+        : {},
       {
         project: this.rawConfig.project,
         projectRootDir: this.projectRootDir,
-      },
-      this.rawConfig.common,
-      this.rawConfig.stages[stageName]
+        tags,
+        stageName,
+        appName,
+      }
     )
-
-    config.stageName = stageName
-    config.appName = appName
-
-    // add default tags
-    config.tags = Object.assign({}, config.tags, {
-      project: config.project,
-      appname: config.appName,
-      stage: stageName,
-    })
-
-    // merge result config with app config and app stage config
-    const appConfig = this.rawConfig[appName as keyof RawConfig] as MapOfAny
-    if (appConfig) {
-      if (appConfig.common) {
-        Object.assign(config, appConfig.common)
-      }
-
-      if (appConfig.stages && appConfig.stages[stageName]) {
-        Object.assign(config, appConfig.stages[stageName])
-      }
-    }
-
-    return config
   }
 
   get stages(): StageProps[] {

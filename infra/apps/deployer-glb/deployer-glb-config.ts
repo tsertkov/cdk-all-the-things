@@ -6,8 +6,8 @@ export interface DeployerGlbStageProps extends StageProps {
   readonly githubOidcArnCfnOutput: string
   readonly noApprovalDeploy: boolean
   readonly nextStage?: string
+  readonly prevStage?: string
   readonly ecrMaxImageCount: number
-  nextStageConfig?: DeployerGlbStageProps
   rootConfig: Config
   appModules: string[]
 }
@@ -25,13 +25,6 @@ export class DeployerGlbConfig extends Config {
 
     stageConfig.rootConfig = this
     stageConfig.appModules = Object.keys(appModules)
-
-    if (stageConfig.nextStage) {
-      stageConfig.nextStageConfig = this.stageConfig(
-        stageConfig.nextStage,
-        appName
-      )
-    }
 
     return stageConfig
   }

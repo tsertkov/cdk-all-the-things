@@ -39,7 +39,10 @@ deployer-glb:
       ecrMaxImageCount: 10
       nextStage: stg
     stg:
+      prevStage: dev
       nextStage: prd
+    prd:
+      prevStage: stg
 
 monitor-glb:
   common:

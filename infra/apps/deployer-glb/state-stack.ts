@@ -1,7 +1,7 @@
 import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
-  AnyPrincipal,
+  ArnPrincipal,
   FederatedPrincipal,
   PolicyStatement,
   Role,
@@ -37,7 +37,10 @@ export class StateStack extends NestedStackBase {
     this.initDeployerEcrRepo()
     this.initDeployerLogGroup()
     this.initCiRole()
-    this.initCiRolePromotionGrants()
+
+    if (this.config.nextStage) {
+      this.initCiRolePromotionGrants(this.config.nextStage)
+    }
   }
 
   private initDeployerLogGroup() {
@@ -47,43 +50,39 @@ export class StateStack extends NestedStackBase {
     })
   }
 
-  private initCiRolePromotionGrants() {
-    if (!this.config.nextStageConfig) return
-
-    const principal = new AnyPrincipal()
+  private initCiRolePromotionGrants(nextStage: string) {
+    const nextStageConfig = this.config.rootConfig.stageConfig(
+      nextStage,
+      this.config.appName
+    )
 
     const nextStageRoleName = deterministicName(
       {
         name: CI_ROLE_NAME,
-        stage: this.config.nextStageConfig.stageName,
+        stage: nextStage,
         region: null,
         app: null,
       },
       this
     )
 
-    const conditions = {
-      ArnLike: {
-        'aws:PrincipalArn': Arn.format(
-          {
-            account: this.config.nextStageConfig.account || this.account,
-            region: '',
-            service: 'iam',
-            resource: 'role',
-            resourceName: nextStageRoleName,
-          },
-          this
-        ),
+    const nextStageRoleArn = Arn.format(
+      {
+        account: nextStageConfig.account || this.account,
+        region: '',
+        service: 'iam',
+        resource: 'role',
+        resourceName: nextStageRoleName,
       },
-    }
+      this
+    )
 
     // grant pulling container images to next stage ci role
     this.deployerEcrRepo.addToResourcePolicy(
       new PolicyStatement({
         sid: 'PromotionPolicy',
         actions: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer'],
-        principals: [principal],
-        conditions,
+        principals: [new ArnPrincipal(nextStageRoleArn)],
       })
     )
   }
@@ -121,6 +120,33 @@ export class StateStack extends NestedStackBase {
     )
 
     this.deployerEcrRepo.grantPullPush(this.ciRole)
+
+    // grant pull access to src image if it is on a different aws account
+    if (this.config.prevStage) {
+      const prevStageConfig = this.config.rootConfig.stageConfig(
+        this.config.prevStage,
+        this.config.appName
+      )
+
+      if (prevStageConfig.account !== this.account) {
+        this.ciRole.addToPolicy(
+          new PolicyStatement({
+            actions: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer'],
+            resources: [
+              Arn.format(
+                {
+                  account: prevStageConfig.account,
+                  service: 'ecr',
+                  resource: 'repository',
+                  resourceName: this.deployerRepoName(this.config.prevStage),
+                },
+                this
+              ),
+            ],
+          })
+        )
+      }
+    }
 
     // allow starting and monitoring pipeline execution
     const pipelineName = `${this.config.project}-${this.config.stageName}-*`
