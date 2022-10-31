@@ -1,6 +1,6 @@
 # CDK All The Things
 
-Multi-region, multi-environment AWS CDK and Golang cloud application playground.
+Multi-account, multi-region, multi-environment AWS CDK and Golang cloud application playground.
 
 ## Prerequisites
 
