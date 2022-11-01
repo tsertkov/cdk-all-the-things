@@ -83,7 +83,7 @@ export class Config {
       const config = this.readConfigFile(path.join(secretsDirPath, file))
       if (config === null) return
 
-      configs.push(this.readConfigFile(path.join(secretsDirPath, file)))
+      configs.push(config)
     })
 
     return deepmerge(...configs) as RawConfig
