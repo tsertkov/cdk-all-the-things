@@ -1,4 +1,4 @@
-import { Arn, ArnFormat, Fn, RemovalPolicy } from 'aws-cdk-lib'
+import { Arn, Fn } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
   ArnPrincipal,
@@ -33,7 +33,6 @@ export class StateStack extends NestedStackBase {
       this.config.githubOidcArnCfnOutput
     )
 
-    this.initArtifactsBucket()
     this.initDeployerEcrRepo()
     this.initDeployerLogGroup()
     this.initCiRole()
@@ -107,10 +106,6 @@ export class StateStack extends NestedStackBase {
       assumedBy: githubPrincipal,
     })
 
-    // grant permission to write to artifacts bucket
-    this.artifactsBucket.grantWrite(this.ciRole, '*.zip')
-    this.artifactsBucket.grantRead(this.ciRole)
-
     // grant permission to push container images to ecr
     this.ciRole.addToPolicy(
       new PolicyStatement({
@@ -148,36 +143,33 @@ export class StateStack extends NestedStackBase {
       }
     }
 
-    // allow starting and monitoring pipeline execution
-    const pipelineName = `${this.config.project}-${this.config.stageName}-*`
+    // allow starting and monitoring statemachine execution
     this.ciRole.addToPolicy(
       new PolicyStatement({
         actions: [
-          'codepipeline:StartPipelineExecution',
-          'codepipeline:GetPipelineExecution',
-          'codepipeline:StopPipelineExecution',
-          'codepipeline:ListActionExecutions',
+          'states:StartExecution',
+          'states:DescribeExecution',
+          'states:StopExecution',
         ],
         resources: [
           Arn.format(
             {
-              service: 'codepipeline',
-              arnFormat: ArnFormat.NO_RESOURCE_NAME,
-              resource: pipelineName,
+              service: 'states',
+              resource: 'stateMachine',
+              resourceName: deterministicName(
+                {
+                  region: null,
+                  app: null,
+                  name: 'Deployer',
+                },
+                this
+              ),
             },
             this
           ),
         ],
       })
     )
-  }
-
-  private initArtifactsBucket() {
-    this.artifactsBucket = new Bucket(this, 'ArtifactsBucket', {
-      removalPolicy: this.config.removalPolicy,
-      autoDeleteObjects: this.config.removalPolicy === RemovalPolicy.DESTROY,
-      versioned: true,
-    })
   }
 
   private initDeployerEcrRepo() {

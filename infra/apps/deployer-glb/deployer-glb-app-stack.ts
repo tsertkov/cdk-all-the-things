@@ -38,10 +38,5 @@ export class DeployerGlbAppStack extends StackBase {
       value: this.stateStack.deployerEcrRepo.repositoryUri,
       exportName: deterministicName({ name: 'DeployerEcrRepoUri' }, this),
     })
-
-    new CfnOutput(this, 'ArtifactsBucketName', {
-      value: this.stateStack.artifactsBucket.bucketName,
-      exportName: deterministicName({ name: 'ArtifactsBucketName' }, this),
-    })
   }
 }
