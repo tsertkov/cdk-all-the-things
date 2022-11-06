@@ -27,7 +27,6 @@ describe(APP_NAME, () => {
   test('contains expected outputs', () => {
     tpl.hasOutput('CiRoleArn', {})
     tpl.hasOutput('DeployerEcrRepoUri', {})
-    tpl.hasOutput('ArtifactsBucketName', {})
   })
 
   test('contains nested stacks', () => {
