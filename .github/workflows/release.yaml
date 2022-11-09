@@ -17,57 +17,12 @@ jobs:
       environment: stg
     secrets: inherit
 
-  stg-deployer-glb:
+  stg-deploy:
     needs:
       - version
       - dev-to-stg
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: deployer-glb
-      environment: stg
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  stg-monitor-glb:
-    needs:
-      - version
-      - stg-deployer-glb
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: monitor-glb
-      environment: stg
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  stg-monitor:
-    needs:
-      - version
-      - stg-monitor-glb
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: monitor
-      environment: stg
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  stg-be:
-    needs:
-      - version
-      - stg-monitor
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: be
-      environment: stg
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  stg-fe:
-    needs:
-      - version
-      - stg-be
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: fe
       environment: stg
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
@@ -84,57 +39,12 @@ jobs:
       environment: prd
     secrets: inherit
 
-  prd-deployer-glb:
+  prd-deploy:
     needs:
       - version
       - stg-to-prd
     uses: ./.github/workflows/deploy-stage.yaml
     with:
-      app: deployer-glb
-      environment: prd
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  prd-monitor-glb:
-    needs:
-      - version
-      - prd-deployer-glb
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: monitor-glb
-      environment: prd
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  prd-monitor:
-    needs:
-      - version
-      - prd-monitor-glb
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: monitor
-      environment: prd
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  prd-be:
-    needs:
-      - version
-      - prd-monitor
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: be
-      environment: prd
-      version: ${{ needs.version.outputs.version }}
-    secrets: inherit
-
-  prd-fe:
-    needs:
-      - version
-      - prd-be
-    uses: ./.github/workflows/deploy-stage.yaml
-    with:
-      app: fe
       environment: prd
       version: ${{ needs.version.outputs.version }}
     secrets: inherit
