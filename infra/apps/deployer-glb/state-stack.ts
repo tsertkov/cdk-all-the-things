@@ -143,14 +143,10 @@ export class StateStack extends NestedStackBase {
       }
     }
 
-    // allow starting and monitoring statemachine execution
+    // allow starting statemachine execution
     this.ciRole.addToPolicy(
       new PolicyStatement({
-        actions: [
-          'states:StartExecution',
-          'states:DescribeExecution',
-          'states:StopExecution',
-        ],
+        actions: ['states:StartExecution'],
         resources: [
           Arn.format(
             {
@@ -165,6 +161,32 @@ export class StateStack extends NestedStackBase {
                 },
                 this
               ),
+            },
+            this
+          ),
+        ],
+      })
+    )
+
+    // allow monitoring and stopping statemachine execution
+    this.ciRole.addToPolicy(
+      new PolicyStatement({
+        actions: ['states:DescribeExecution', 'states:StopExecution'],
+        resources: [
+          Arn.format(
+            {
+              service: 'states',
+              resource: 'execution',
+              arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+              resourceName:
+                deterministicName(
+                  {
+                    region: null,
+                    app: null,
+                    name: 'Deployer',
+                  },
+                  this
+                ) + ':*',
             },
             this
           ),
