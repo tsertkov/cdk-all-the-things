@@ -1,4 +1,4 @@
-import { Arn, Fn } from 'aws-cdk-lib'
+import { Arn, ArnFormat, Fn } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
   ArnPrincipal,
@@ -156,6 +156,7 @@ export class StateStack extends NestedStackBase {
             {
               service: 'states',
               resource: 'stateMachine',
+              arnFormat: ArnFormat.COLON_RESOURCE_NAME,
               resourceName: deterministicName(
                 {
                   region: null,
