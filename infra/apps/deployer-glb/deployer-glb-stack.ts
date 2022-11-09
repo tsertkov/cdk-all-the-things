@@ -235,14 +235,19 @@ export class DeployerGlbStack extends NestedStackBase {
   }
 
   private initAppDeployerStateMachine() {
+    const paramsToPass = {
+      'cmd.$': '$.cmd',
+      'version.$': '$.version',
+      'projectType.$': '$.projectType',
+    }
+
     // app deployment groups are deployed in sequence
     const appsGroupsDeployMapTask = new Map(this, 'AppGroupsDeployMapTask', {
       maxConcurrency: 1,
       itemsPath: JsonPath.stringAt('$.appGroups'),
       parameters: {
+        ...paramsToPass,
         'appsGroup.$': '$$.Map.Item.Value',
-        'cmd.$': '$.cmd',
-        'version.$': '$.version',
       },
     })
 
@@ -251,10 +256,9 @@ export class DeployerGlbStack extends NestedStackBase {
       // inputPath: JsonPath.stringAt('$.appsGroup'),
       itemsPath: JsonPath.stringAt('$.appsGroup'),
       parameters: {
+        ...paramsToPass,
         'app.$': '$$.Map.Item.Value.app',
         'regcode.$': '$$.Map.Item.Value.regcode',
-        'cmd.$': '$.cmd',
-        'version.$': '$.version',
       },
     })
 
