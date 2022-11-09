@@ -20,11 +20,10 @@ stages:
     logRetentionDays: 7
 
 apps:
-  - deployer-glb
   - monitor-glb
   - monitor
-  - be
-  - fe
+  - - be
+    - fe
 
 deployer-glb:
   common:

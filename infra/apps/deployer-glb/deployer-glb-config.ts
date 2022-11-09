@@ -10,6 +10,7 @@ export interface DeployerGlbStageProps extends StageProps {
   readonly ecrMaxImageCount: number
   rootConfig: Config
   appModules: string[]
+  apps: [string | string[]][]
 }
 
 export class DeployerGlbConfig extends Config {
@@ -24,6 +25,7 @@ export class DeployerGlbConfig extends Config {
     ) as DeployerGlbStageProps
 
     stageConfig.rootConfig = this
+    stageConfig.apps = this.rawConfig.apps
     stageConfig.appModules = Object.keys(appModules)
 
     return stageConfig

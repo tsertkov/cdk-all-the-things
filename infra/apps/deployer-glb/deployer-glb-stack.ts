@@ -4,10 +4,14 @@ import { Pipeline } from 'aws-cdk-lib/aws-codepipeline'
 import { BuildSpec, LinuxBuildImage, Project } from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import {
+  IChainable,
   IntegrationPattern,
   JsonPath,
   Map,
+  Pass,
+  Result,
   StateMachine,
+  TaskInput,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import {
   CallAwsService,
@@ -52,7 +56,11 @@ export class DeployerGlbStack extends NestedStackBase {
    * @param props Input props overrides
    * @returns Environment vars configuration object
    */
-  private deployerEnvVars(props?: { app?: string; regcode?: string }): {
+  private deployerEnvVars(props?: {
+    app?: string
+    regcode?: string
+    cmd?: string
+  }): {
     DEPLOYER_IMAGE: { value: string }
     STAGE: { value: string }
     VERSION: { value: string }
@@ -71,7 +79,7 @@ export class DeployerGlbStack extends NestedStackBase {
         value: JsonPath.stringAt('$.version'),
       },
       CMD: {
-        value: JsonPath.stringAt('$.cmd'),
+        value: props?.cmd || JsonPath.stringAt('$.cmd'),
       },
       APP: {
         value: props?.app || JsonPath.stringAt('$.app'),
@@ -113,11 +121,41 @@ export class DeployerGlbStack extends NestedStackBase {
         resultPath: JsonPath.DISCARD,
         environmentVariablesOverride: this.deployerEnvVars({
           app: this.config.appName,
+          cmd: 'deploy',
           // assuming single deployer region
           regcode: regionToCode(this.config.regions[0]),
         }),
       }
     )
+
+    const appGroups = this.config.apps.map((app) => {
+      // group of apps deployed in parallel
+      if (Array.isArray(app)) {
+        return app
+          .map((app) =>
+            this.config.rootConfig
+              .stageConfig(this.config.stageName, app as string)
+              .regions.map((region) => ({ app, regcode: regionToCode(region) }))
+          )
+          .flat()
+      }
+
+      return this.config.rootConfig
+        .stageConfig(this.config.stageName, app)
+        .regions.map((region) => ({ app, regcode: regionToCode(region) }))
+    })
+
+    // prepare appGroups deployer and diff input
+    // unfortunately passing apps input directly to deploy and diff tasks
+    // is not possible due to issue in TaskInput.fromObject with
+    // broken handling of nested arrays
+    const prepareAppGroupsTask = new Pass(this, 'PrepareAppGroupsTask', {
+      result: Result.fromObject({
+        deploy: appGroups,
+        diff: appGroups.flat(),
+      }),
+      resultPath: '$.appGroups',
+    })
 
     // start deployer in codebuild with env vars mapped from task input
     const deployAppsTask = new StepFunctionsStartExecution(
@@ -126,12 +164,60 @@ export class DeployerGlbStack extends NestedStackBase {
       {
         stateMachine: this.appDeployerStateMachine,
         integrationPattern: IntegrationPattern.RUN_JOB,
+        input: TaskInput.fromObject({
+          cmd: 'deploy',
+          'version.$': '$.version',
+          'appGroups.$': '$.appGroups.deploy',
+        }),
       }
     )
 
-    const definition = deployerImageAvailabilityTask.next(
-      deployDeployerTask.next(deployAppsTask)
-    )
+    let definition: IChainable
+
+    if (this.config.noApprovalDeploy) {
+      definition = deployerImageAvailabilityTask.next(
+        deployDeployerTask.next(prepareAppGroupsTask.next(deployAppsTask))
+      )
+    } else {
+      const diffDeployerTask = new CodeBuildStartBuild(
+        this,
+        'DiffDeployerTask',
+        {
+          project: this.codeBuildRoPrj,
+          integrationPattern: IntegrationPattern.RUN_JOB,
+          resultPath: JsonPath.DISCARD,
+          environmentVariablesOverride: this.deployerEnvVars({
+            app: this.config.appName,
+            cmd: 'diff',
+            // assuming single deployer region
+            regcode: regionToCode(this.config.regions[0]),
+          }),
+        }
+      )
+
+      const diffAppsTask = new StepFunctionsStartExecution(
+        this,
+        'DiffAppsTask',
+        {
+          stateMachine: this.appDeployerStateMachine,
+          integrationPattern: IntegrationPattern.RUN_JOB,
+          resultPath: JsonPath.DISCARD,
+          input: TaskInput.fromObject({
+            cmd: 'diff',
+            'version.$': '$.version',
+            'appGroups.$': '$.appGroups.diff',
+          }),
+        }
+      )
+
+      definition = deployerImageAvailabilityTask.next(
+        diffDeployerTask.next(
+          deployDeployerTask.next(
+            prepareAppGroupsTask.next(diffAppsTask.next(deployAppsTask))
+          )
+        )
+      )
+    }
 
     this.deployerStateMachine = new StateMachine(this, 'DeployerStateMachine', {
       stateMachineName: deterministicName(
@@ -146,9 +232,8 @@ export class DeployerGlbStack extends NestedStackBase {
 
   private initAppDeployerStateMachine() {
     // app deployment groups are deployed in sequence
-    const appsGroupsMapTask = new Map(this, 'AppGroupsMapTask', {
+    const appsGroupsDeployMapTask = new Map(this, 'AppGroupsDeployMapTask', {
       maxConcurrency: 1,
-      // inputPath: JsonPath.stringAt('$.appGroups'),
       itemsPath: JsonPath.stringAt('$.appGroups'),
       parameters: {
         'appsGroup.$': '$$.Map.Item.Value',
@@ -176,7 +261,7 @@ export class DeployerGlbStack extends NestedStackBase {
       environmentVariablesOverride: this.deployerEnvVars(),
     })
 
-    const definition = appsGroupsMapTask.iterator(
+    const definition = appsGroupsDeployMapTask.iterator(
       appsMapTask.iterator(runDeployerTask)
     )
 
