@@ -21,6 +21,7 @@ export interface StageProps {
 type MapOfAny = Record<string, any>
 
 export interface RawConfig {
+  readonly apps: [string | string[]][]
   readonly common?: MapOfAny
   readonly stages: MapOfAny
   readonly project: string

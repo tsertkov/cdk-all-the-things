@@ -26,8 +26,7 @@ public_key ?= $(shell grep '^\# public key: ' $(sops_key_file) | sed 's/^.*: //'
 stacks := *-$(stage)-$(regcode)/$(app)
 app_ext := $(shell test ! -f Dockerfile && echo js || echo ts)
 infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
-apps ?= $(shell yq '.apps' $(config_file) | sed 's/- //' | xargs)
-apps_r ?= $(shell echo $(apps) | awk '{ for (i = NF; i > 0; i = i - 1) printf("%s ", $$i); printf("\n")}')
+apps ?= $(shell echo deployer-glb && yq '.apps | flatten()' $(config_file) | sed 's/- //' | xargs)
 all_regions ?= $(shell yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' config.yaml | sort | uniq)
 aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output text)
 aws_secrets_cmd := scripts/aws-secrets.sh

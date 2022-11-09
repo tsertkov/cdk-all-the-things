@@ -1,19 +1,25 @@
 import { Construct } from 'constructs'
 import { Arn, ArnFormat, Aws } from 'aws-cdk-lib'
-import { Artifact, Pipeline } from 'aws-cdk-lib/aws-codepipeline'
-import {
-  BuildSpec,
-  LinuxBuildImage,
-  PipelineProject,
-} from 'aws-cdk-lib/aws-codebuild'
+import { Pipeline } from 'aws-cdk-lib/aws-codepipeline'
+import { BuildSpec, LinuxBuildImage, Project } from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import {
-  Action,
-  CodeBuildAction,
-  ManualApprovalAction,
-  S3SourceAction,
-  S3Trigger,
-} from 'aws-cdk-lib/aws-codepipeline-actions'
+  Choice,
+  Condition,
+  IChainable,
+  IntegrationPattern,
+  JsonPath,
+  Map,
+  Pass,
+  Result,
+  StateMachine,
+  TaskInput,
+} from 'aws-cdk-lib/aws-stepfunctions'
+import {
+  CallAwsService,
+  CodeBuildStartBuild,
+  StepFunctionsStartExecution,
+} from 'aws-cdk-lib/aws-stepfunctions-tasks'
 import {
   NestedStackBase,
   NestedStackBaseProps,
@@ -21,25 +27,6 @@ import {
 import { deterministicName, regionToCode } from '../../lib/utils'
 import { DeployerGlbStageProps } from './deployer-glb-config'
 import { StateStack } from './state-stack'
-
-const CMD = {
-  ecrLogin: '$(aws ecr get-login --no-include-email)',
-  containerCreds: [
-    'CREDS=$(curl -s 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)',
-    'export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r \'.Token\')',
-    'export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r \'.AccessKeyId\')',
-    'export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r \'.SecretAccessKey\')',
-  ],
-  dockerRun:
-    'docker run -e ' +
-    [
-      'AWS_SESSION_TOKEN',
-      'AWS_ACCESS_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY',
-      'AWS_DEFAULT_REGION',
-      'AWS_REGION',
-    ].join(' -e '),
-}
 
 export interface DeployerGlStackProps extends NestedStackBaseProps {
   readonly stateStack: StateStack
@@ -50,195 +37,338 @@ export class DeployerGlbStack extends NestedStackBase {
   readonly stateStack: StateStack
   readonly githubOidcProviderArn: string
   readonly codePipelines: Pipeline[] = []
-  codeBuildRo: PipelineProject
-  codeBuildRw: PipelineProject
-  sdPipeline: Pipeline
+  appDeployerStateMachine: StateMachine
+  deployerStateMachine: StateMachine
+  startBuildTask: CodeBuildStartBuild
+  codeBuildRoPrj: Project
+  codeBuildRwPrj: Project
 
   constructor(scope: Construct, id: string, props: DeployerGlStackProps) {
     super(scope, id, props)
     this.stateStack = props.stateStack
 
-    this.initCodeBuildRo()
-    this.initCodeBuildRw()
-    this.initPipelines()
+    this.initCodeBuildRoPrj()
+    this.initCodeBuildRwPrj()
+    this.initAppDeployerStateMachine()
+    this.initDeployerStateMachine()
   }
 
-  private initPipelines() {
-    // codepipeline pipelines for each app & regions within current stage
-    this.config.appModules.forEach((appName) => {
-      this.codePipelines.push(
-        this.initCodePipeline(
-          this.config.rootConfig.stageConfig(
-            this.config.stageName,
-            appName
-          ) as DeployerGlbStageProps,
-          this.config.noApprovalDeploy
-        )
-      )
-    })
+  /**
+   * Assemble deployer codebuild project environment variables for a given app
+   * @param props Input props overrides
+   * @returns Environment vars configuration object
+   */
+  private deployerEnvVars(props?: {
+    app?: string
+    regcode?: string
+    cmd?: string
+  }): {
+    DEPLOYER_IMAGE: { value: string }
+    STAGE: { value: string }
+    VERSION: { value: string }
+    CMD: { value: string }
+    APP: { value: string }
+    REGCODE: { value: string }
+  } {
+    return {
+      DEPLOYER_IMAGE: {
+        value: this.stateStack.deployerEcrRepo.repositoryUri,
+      },
+      STAGE: {
+        value: this.config.stageName,
+      },
+      VERSION: {
+        value: JsonPath.stringAt('$.version'),
+      },
+      CMD: {
+        value: props?.cmd || JsonPath.stringAt('$.cmd'),
+      },
+      APP: {
+        value: props?.app || JsonPath.stringAt('$.app'),
+      },
+      REGCODE: {
+        value: props?.regcode || JsonPath.stringAt('$.regcode'),
+      },
+    }
   }
 
-  private initCodePipeline(
-    props: DeployerGlbStageProps,
-    noApprovalDeploy: boolean
-  ): Pipeline {
-    // init deployment code pipeline for given app & regions
-    const { project, appName, stageName, regions } = props
-
-    const pipelineName = `${project}-${stageName}-${appName}`
-    const configArtifact = new Artifact(appName)
-    const bucketKey = `${appName}.zip`
-
-    const environmentVariables = {
-      CMD: { value: 'ls' },
-      REGCODE: { value: '*' },
-      APP: { value: appName },
-      STAGE: { value: stageName },
-    }
-
-    const sourceAction = new S3SourceAction({
-      bucketKey,
-      actionName: bucketKey,
-      bucket: this.stateStack.artifactsBucket,
-      output: configArtifact,
-      trigger: S3Trigger.NONE,
-    })
-
-    let runOrder = 0
-    const deployActions: Action[] = []
-
-    // optional diff & approval actions
-    if (!noApprovalDeploy) {
-      runOrder++
-      deployActions.push(
-        ...regions.map((region) => {
-          const regname = regionToCode(region)
-          const cmd = 'diff'
-          return new CodeBuildAction({
-            runOrder,
-            actionName: `${cmd}-${regname}`,
-            project: this.codeBuildRo,
-            input: configArtifact,
-            outputs: [new Artifact(`${cmd}-${regname}`)],
-            environmentVariables: {
-              ...environmentVariables,
-              CMD: {
-                value: cmd,
-              },
-              REGCODE: {
-                value: regname,
-              },
+  private initDeployerStateMachine() {
+    // make sure deployer image of given version is available
+    const deployerImageAvailabilityTask = new CallAwsService(
+      this,
+      'DeployerImageAvailabilityTask',
+      {
+        service: 'ecr',
+        action: 'batchGetImage',
+        iamResources: [this.stateStack.deployerEcrRepo.repositoryArn],
+        resultPath: JsonPath.DISCARD,
+        parameters: {
+          RepositoryName: this.stateStack.deployerEcrRepo.repositoryName,
+          ImageIds: [
+            {
+              'ImageTag.$': `$.version`,
             },
-          })
-        })
-      )
-
-      runOrder++
-      deployActions.push(
-        new ManualApprovalAction({
-          runOrder,
-          actionName: `approve-deploy`,
-        })
-      )
-    }
-
-    // deployment actions
-    runOrder++
-    deployActions.push(
-      ...regions.map((region) => {
-        const regname = regionToCode(region)
-        const cmd = 'deploy'
-        return new CodeBuildAction({
-          runOrder,
-          actionName: `${cmd}-${regname}`,
-          project: this.codeBuildRw,
-          input: configArtifact,
-          outputs: [new Artifact(`${cmd}-${regname}`)],
-          environmentVariables: {
-            ...environmentVariables,
-            CMD: {
-              value: cmd,
-            },
-            REGCODE: {
-              value: regname,
-            },
-          },
-        })
-      })
+          ],
+        },
+      }
     )
 
-    return new Pipeline(this, `${appName}-${stageName}-pipeline`, {
-      pipelineName,
-      artifactBucket: this.stateStack.artifactsBucket,
-      stages: [
-        {
-          stageName: 'read-config',
-          actions: [sourceAction],
-        },
-        {
-          stageName: `deploy-${stageName}-${appName}`,
-          actions: deployActions,
-        },
-      ],
+    // start deployer in codebuild with env vars mapped from task input
+    const deployDeployerTask = new CodeBuildStartBuild(
+      this,
+      'DeployDeployerTask',
+      {
+        project: this.codeBuildRwPrj,
+        integrationPattern: IntegrationPattern.RUN_JOB,
+        resultPath: JsonPath.DISCARD,
+        environmentVariablesOverride: this.deployerEnvVars({
+          app: this.config.appName,
+          cmd: 'deploy',
+          // assuming single deployer region
+          regcode: regionToCode(this.config.regions[0]),
+        }),
+      }
+    )
+
+    const appGroups = this.config.apps.map((app) => {
+      // group of apps deployed in parallel
+      if (Array.isArray(app)) {
+        return app
+          .map((app) =>
+            this.config.rootConfig
+              .stageConfig(this.config.stageName, app as string)
+              .regions.map((region) => ({ app, regcode: regionToCode(region) }))
+          )
+          .flat()
+      }
+
+      return this.config.rootConfig
+        .stageConfig(this.config.stageName, app)
+        .regions.map((region) => ({ app, regcode: regionToCode(region) }))
     })
+
+    // prepare appGroups deployer and diff input
+    // unfortunately passing apps input directly to deploy and diff tasks
+    // is not possible due to issue in TaskInput.fromObject with
+    // broken handling of nested arrays
+    const prepareAppGroupsTask = new Pass(this, 'PrepareAppGroupsTask', {
+      result: Result.fromObject({
+        deploy: appGroups,
+        diff: appGroups.flat(),
+      }),
+      resultPath: '$.appGroups',
+    })
+
+    // start deployer in codebuild with env vars mapped from task input
+    const deployAppsTask = new StepFunctionsStartExecution(
+      this,
+      'DeployAppsTask',
+      {
+        stateMachine: this.appDeployerStateMachine,
+        integrationPattern: IntegrationPattern.RUN_JOB,
+        input: TaskInput.fromObject({
+          cmd: 'deploy',
+          projectType: 'rw',
+          'version.$': '$.version',
+          'appGroups.$': '$.appGroups.deploy',
+        }),
+      }
+    )
+
+    let definition: IChainable
+
+    if (this.config.noApprovalDeploy) {
+      definition = deployerImageAvailabilityTask.next(
+        deployDeployerTask.next(prepareAppGroupsTask.next(deployAppsTask))
+      )
+    } else {
+      const diffDeployerTask = new CodeBuildStartBuild(
+        this,
+        'DiffDeployerTask',
+        {
+          project: this.codeBuildRoPrj,
+          integrationPattern: IntegrationPattern.RUN_JOB,
+          resultPath: JsonPath.DISCARD,
+          environmentVariablesOverride: this.deployerEnvVars({
+            app: this.config.appName,
+            cmd: 'diff',
+            // assuming single deployer region
+            regcode: regionToCode(this.config.regions[0]),
+          }),
+        }
+      )
+
+      const diffAppsTask = new StepFunctionsStartExecution(
+        this,
+        'DiffAppsTask',
+        {
+          stateMachine: this.appDeployerStateMachine,
+          integrationPattern: IntegrationPattern.RUN_JOB,
+          resultPath: JsonPath.DISCARD,
+          input: TaskInput.fromObject({
+            cmd: 'diff',
+            projectType: 'ro',
+            'version.$': '$.version',
+            'appGroups.$': '$.appGroups.diff',
+          }),
+        }
+      )
+
+      definition = deployerImageAvailabilityTask.next(
+        diffDeployerTask.next(
+          deployDeployerTask.next(
+            prepareAppGroupsTask.next(diffAppsTask.next(deployAppsTask))
+          )
+        )
+      )
+    }
+
+    this.deployerStateMachine = new StateMachine(this, 'DeployerStateMachine', {
+      stateMachineName: deterministicName(
+        { name: 'Deployer', region: null, app: null },
+        this
+      ),
+      definition,
+    })
+
+    this.stateStack.deployerEcrRepo.grantPull(this.deployerStateMachine)
+  }
+
+  private initAppDeployerStateMachine() {
+    // app deployment groups are deployed in sequence
+    const appsGroupsDeployMapTask = new Map(this, 'AppGroupsDeployMapTask', {
+      maxConcurrency: 1,
+      itemsPath: JsonPath.stringAt('$.appGroups'),
+      parameters: {
+        'appsGroup.$': '$$.Map.Item.Value',
+        'cmd.$': '$.cmd',
+        'version.$': '$.version',
+      },
+    })
+
+    // apps in each group are deployed in parallel
+    const appsMapTask = new Map(this, 'AppsMapTask', {
+      // inputPath: JsonPath.stringAt('$.appsGroup'),
+      itemsPath: JsonPath.stringAt('$.appsGroup'),
+      parameters: {
+        'app.$': '$$.Map.Item.Value.app',
+        'regcode.$': '$$.Map.Item.Value.regcode',
+        'cmd.$': '$.cmd',
+        'version.$': '$.version',
+      },
+    })
+
+    // start deployer in codebuild with env vars mapped from task input
+    // RO role will be used by codebuild (diff)
+    const runDeployerRoTask = new CodeBuildStartBuild(
+      this,
+      'RunDeployerRoTask',
+      {
+        project: this.codeBuildRoPrj,
+        integrationPattern: IntegrationPattern.RUN_JOB,
+        environmentVariablesOverride: this.deployerEnvVars(),
+      }
+    )
+
+    // start deployer in codebuild with env vars mapped from task input
+    // RW role will be used by codebuild (deploy)
+    const runDeployerRwTask = new CodeBuildStartBuild(
+      this,
+      'RunDeployerRwTask',
+      {
+        project: this.codeBuildRwPrj,
+        integrationPattern: IntegrationPattern.RUN_JOB,
+        environmentVariablesOverride: this.deployerEnvVars(),
+      }
+    )
+
+    const decideProjectTypeTask = new Choice(this, 'DecideProjectTypeTask')
+      .when(Condition.stringEquals('$.projectType', 'rw'), runDeployerRwTask)
+      .when(Condition.stringEquals('$.projectType', 'ro'), runDeployerRoTask)
+
+    const definition = appsGroupsDeployMapTask.iterator(
+      appsMapTask.iterator(decideProjectTypeTask)
+    )
+
+    this.appDeployerStateMachine = new StateMachine(
+      this,
+      'AppDeployerStateMachine',
+      {
+        stateMachineName: deterministicName(
+          { name: 'AppDeployer', region: null, app: null },
+          this
+        ),
+        definition,
+      }
+    )
   }
 
   private createCodeBuild(rw: boolean) {
     const logsDirectory = 'logs'
+    const append = rw ? 'rw' : 'ro'
     const projectName = deterministicName(
       {
         region: null,
-        append: rw ? 'rw' : 'ro',
+        append,
       },
       this
     )
 
-    const codeBuild = new PipelineProject(
-      this,
-      `CodeBuild-${rw ? 'rw' : 'ro'}`,
-      {
-        projectName,
-        logging: {
-          cloudWatch: {
-            logGroup: this.stateStack.deployerLogGroup,
+    const projectClass = Project
+    const codeBuild = new projectClass(this, `CodeBuild-${append}`, {
+      projectName,
+      logging: {
+        cloudWatch: {
+          logGroup: this.stateStack.deployerLogGroup,
+        },
+      },
+      environment: {
+        buildImage: LinuxBuildImage.AMAZON_LINUX_2_3,
+        privileged: true,
+        environmentVariables: {
+          DEPLOYER_IMAGE: {
+            value: this.stateStack.deployerEcrRepo.repositoryUri,
           },
         },
-        environment: {
-          buildImage: LinuxBuildImage.AMAZON_LINUX_2_3,
-          privileged: true,
-          environmentVariables: {
-            DEPLOYER_IMAGE: {
-              value: this.stateStack.deployerEcrRepo.repositoryUri,
-            },
+      },
+      buildSpec: BuildSpec.fromObject({
+        version: '0.2',
+        artifacts: {
+          'base-directory': logsDirectory,
+          files: ['**/*'],
+        },
+        phases: {
+          pre_build: {
+            commands: [
+              'CREDS=$(curl -s 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)',
+              'export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r \'.Token\')',
+              'export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r \'.AccessKeyId\')',
+              'export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r \'.SecretAccessKey\')',
+              '$(aws ecr get-login --no-include-email)',
+              'export IMAGE=${DEPLOYER_IMAGE}:${VERSION:-$(cat $APP)}',
+              'docker pull $IMAGE',
+              `mkdir ${logsDirectory}`,
+            ],
+          },
+          build: {
+            commands: [
+              [
+                'docker run --rm',
+                '-e AWS_SESSION_TOKEN',
+                '-e AWS_ACCESS_KEY_ID',
+                '-e AWS_SECRET_ACCESS_KEY',
+                '-e AWS_DEFAULT_REGION',
+                '-e AWS_REGION',
+                '$IMAGE',
+                'app="$APP" stage="$STAGE" regcode="$REGCODE" $CMD',
+                `|& tee ${logsDirectory}/$CMD-$APP-$STAGE-$REGCODE.txt`,
+                '&& test ${PIPESTATUS[0]} -eq 0',
+              ].join(' '),
+            ],
           },
         },
-        buildSpec: BuildSpec.fromObject({
-          version: '0.2',
-          artifacts: {
-            'base-directory': logsDirectory,
-            files: ['**/*'],
-          },
-          phases: {
-            pre_build: {
-              commands: [
-                ...CMD.containerCreds,
-                CMD.ecrLogin,
-                'export IMAGE=${DEPLOYER_IMAGE}:$(cat $APP)',
-                'docker pull $IMAGE',
-                `mkdir ${logsDirectory}`,
-              ],
-            },
-            build: {
-              commands: [
-                `${CMD.dockerRun} --rm $IMAGE app="$APP" stage="$STAGE" regcode="$REGCODE" $CMD` +
-                  ` |& tee ${logsDirectory}/$CMD-$APP-$STAGE-$REGCODE.txt` +
-                  ` && test \${PIPESTATUS[0]} -eq 0`,
-              ],
-            },
-          },
-        }),
-      }
-    )
+      }),
+    })
 
     codeBuild.addToRolePolicy(
       new PolicyStatement({
@@ -322,11 +452,11 @@ export class DeployerGlbStack extends NestedStackBase {
     return codeBuild
   }
 
-  private initCodeBuildRo() {
-    this.codeBuildRo = this.createCodeBuild(false)
+  private initCodeBuildRoPrj() {
+    this.codeBuildRoPrj = this.createCodeBuild(false)
   }
 
-  private initCodeBuildRw() {
-    this.codeBuildRw = this.createCodeBuild(true)
+  private initCodeBuildRwPrj() {
+    this.codeBuildRwPrj = this.createCodeBuild(true)
   }
 }
