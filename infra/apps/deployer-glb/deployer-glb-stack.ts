@@ -4,6 +4,8 @@ import { Pipeline } from 'aws-cdk-lib/aws-codepipeline'
 import { BuildSpec, LinuxBuildImage, Project } from 'aws-cdk-lib/aws-codebuild'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import {
+  Choice,
+  Condition,
   IChainable,
   IntegrationPattern,
   JsonPath,
@@ -116,7 +118,7 @@ export class DeployerGlbStack extends NestedStackBase {
       this,
       'DeployDeployerTask',
       {
-        project: this.codeBuildRoPrj,
+        project: this.codeBuildRwPrj,
         integrationPattern: IntegrationPattern.RUN_JOB,
         resultPath: JsonPath.DISCARD,
         environmentVariablesOverride: this.deployerEnvVars({
@@ -166,6 +168,7 @@ export class DeployerGlbStack extends NestedStackBase {
         integrationPattern: IntegrationPattern.RUN_JOB,
         input: TaskInput.fromObject({
           cmd: 'deploy',
+          projectType: 'rw',
           'version.$': '$.version',
           'appGroups.$': '$.appGroups.deploy',
         }),
@@ -204,6 +207,7 @@ export class DeployerGlbStack extends NestedStackBase {
           resultPath: JsonPath.DISCARD,
           input: TaskInput.fromObject({
             cmd: 'diff',
+            projectType: 'ro',
             'version.$': '$.version',
             'appGroups.$': '$.appGroups.diff',
           }),
@@ -255,14 +259,35 @@ export class DeployerGlbStack extends NestedStackBase {
     })
 
     // start deployer in codebuild with env vars mapped from task input
-    const runDeployerTask = new CodeBuildStartBuild(this, 'RunDeployerTask', {
-      project: this.codeBuildRoPrj,
-      integrationPattern: IntegrationPattern.RUN_JOB,
-      environmentVariablesOverride: this.deployerEnvVars(),
-    })
+    // RO role will be used by codebuild (diff)
+    const runDeployerRoTask = new CodeBuildStartBuild(
+      this,
+      'RunDeployerRoTask',
+      {
+        project: this.codeBuildRoPrj,
+        integrationPattern: IntegrationPattern.RUN_JOB,
+        environmentVariablesOverride: this.deployerEnvVars(),
+      }
+    )
+
+    // start deployer in codebuild with env vars mapped from task input
+    // RW role will be used by codebuild (deploy)
+    const runDeployerRwTask = new CodeBuildStartBuild(
+      this,
+      'RunDeployerRwTask',
+      {
+        project: this.codeBuildRwPrj,
+        integrationPattern: IntegrationPattern.RUN_JOB,
+        environmentVariablesOverride: this.deployerEnvVars(),
+      }
+    )
+
+    const decideProjectTypeTask = new Choice(this, 'DecideProjectTypeTask')
+      .when(Condition.stringEquals('$.projectType', 'rw'), runDeployerRwTask)
+      .when(Condition.stringEquals('$.projectType', 'ro'), runDeployerRoTask)
 
     const definition = appsGroupsDeployMapTask.iterator(
-      appsMapTask.iterator(runDeployerTask)
+      appsMapTask.iterator(decideProjectTypeTask)
     )
 
     this.appDeployerStateMachine = new StateMachine(
