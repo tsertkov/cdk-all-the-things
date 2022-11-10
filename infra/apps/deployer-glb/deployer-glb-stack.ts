@@ -120,7 +120,7 @@ export class DeployerGlbStack extends NestedStackBase {
       {
         project: this.codeBuildRwPrj,
         integrationPattern: IntegrationPattern.RUN_JOB,
-        resultPath: JsonPath.DISCARD,
+        resultPath: '$.deployDeployer',
         environmentVariablesOverride: this.deployerEnvVars({
           app: this.config.appName,
           cmd: 'deploy',
@@ -166,6 +166,7 @@ export class DeployerGlbStack extends NestedStackBase {
       {
         stateMachine: this.appDeployerStateMachine,
         integrationPattern: IntegrationPattern.RUN_JOB,
+        resultPath: '$.deployApps',
         input: TaskInput.fromObject({
           cmd: 'deploy',
           projectType: 'rw',
