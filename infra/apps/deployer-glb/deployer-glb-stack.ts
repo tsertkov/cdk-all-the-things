@@ -189,7 +189,7 @@ export class DeployerGlbStack extends NestedStackBase {
         {
           project: this.codeBuildRoPrj,
           integrationPattern: IntegrationPattern.RUN_JOB,
-          resultPath: JsonPath.DISCARD,
+          resultPath: '$.diffDeployer',
           environmentVariablesOverride: this.deployerEnvVars({
             app: this.config.appName,
             cmd: 'diff',
@@ -205,7 +205,7 @@ export class DeployerGlbStack extends NestedStackBase {
         {
           stateMachine: this.appDeployerStateMachine,
           integrationPattern: IntegrationPattern.RUN_JOB,
-          resultPath: JsonPath.DISCARD,
+          resultPath: '$.diffApps',
           input: TaskInput.fromObject({
             cmd: 'diff',
             projectType: 'ro',
