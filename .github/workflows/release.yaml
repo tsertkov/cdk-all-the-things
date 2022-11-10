@@ -30,7 +30,7 @@ jobs:
   stg-to-prd:
     needs:
       - version
-      - stg-fe
+      - stg-deploy
     uses: ./.github/workflows/promote-image.yaml
     with:
       name: deployer
