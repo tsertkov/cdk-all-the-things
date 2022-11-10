@@ -154,7 +154,7 @@ export class DeployerGlbStack extends NestedStackBase {
     const prepareAppGroupsTask = new Pass(this, 'PrepareAppGroupsTask', {
       result: Result.fromObject({
         deploy: appGroups,
-        diff: appGroups.flat(),
+        diff: [appGroups.flat()],
       }),
       resultPath: '$.appGroups',
     })
