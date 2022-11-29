@@ -1,8 +1,8 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { Aws } from 'aws-cdk-lib'
 import { CfnSubscriptionFilter } from 'aws-cdk-lib/aws-logs'
-import { NestedStackBase, NestedStackBaseProps } from './nested-stack-base'
-import { regionToCode } from './utils'
+import { NestedStackBase, NestedStackBaseProps } from './nested-stack-base.js'
+import { regionToCode } from './utils.js'
 
 interface MonitorStackProps extends NestedStackBaseProps {
   logGroupNames: string[]

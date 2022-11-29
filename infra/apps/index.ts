@@ -1,8 +1,8 @@
-import deployerGlb from './deployer-glb'
-import monitorGlb from './monitor-glb'
-import monitor from './monitor'
-import be from './be'
-import fe from './fe'
+import { deployerGlb } from './deployer-glb/index.js'
+import { monitorGlb } from './monitor-glb/index.js'
+import { monitor } from './monitor/index.js'
+import { be } from './be/index.js'
+import { fe } from './fe/index.js'
 
 export default {
   'deployer-glb': deployerGlb,

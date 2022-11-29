@@ -1,4 +1,4 @@
-import { Config, StageProps } from '../../lib/config'
+import { Config, StageProps } from '../../lib/config.js'
 
 export interface BeStageProps extends StageProps {
   readonly apiResourceName: string
@@ -6,7 +6,7 @@ export interface BeStageProps extends StageProps {
 }
 
 export class BeConfig extends Config {
-  get stages(): BeStageProps[] {
+  override get stages(): BeStageProps[] {
     return super.stages as BeStageProps[]
   }
 }

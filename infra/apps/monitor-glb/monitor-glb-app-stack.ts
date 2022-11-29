@@ -1,17 +1,22 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { Aws, CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Bucket } from 'aws-cdk-lib/aws-s3'
-import { StackBase, StackBaseProps } from '../../lib/stack-base'
-import { deterministicName } from '../../lib/utils'
-import { MonitorGlbStageProps } from './monitor-glb-config'
+import { StackBase, StackBaseProps } from '../../lib/stack-base.js'
+import { deterministicName } from '../../lib/utils.js'
+import type { MonitorGlbStageProps } from './monitor-glb-config.js'
+
+interface MonitorGlbAppStackProps extends StackBaseProps {
+  readonly config: MonitorGlbStageProps
+}
 
 export class MonitorGlbAppStack extends StackBase {
-  readonly config: MonitorGlbStageProps
-  logsBucket: Bucket
+  override readonly config: MonitorGlbStageProps
+  readonly logsBucket: Bucket
 
-  constructor(scope: Construct, id: string, props: StackBaseProps) {
+  constructor(scope: Construct, id: string, props: MonitorGlbAppStackProps) {
     super(scope, id, props)
-    this.initLogsBucket()
+    this.config = props.config
+    this.logsBucket = this.initLogsBucket()
     this.initOutputs()
   }
 
@@ -28,7 +33,7 @@ export class MonitorGlbAppStack extends StackBase {
       '-' +
       Aws.ACCOUNT_ID
 
-    this.logsBucket = new Bucket(this, 'LogsBucket', {
+    return new Bucket(this, 'LogsBucket', {
       bucketName,
       autoDeleteObjects: this.config.removalPolicy === RemovalPolicy.DESTROY,
       removalPolicy: this.config.removalPolicy,

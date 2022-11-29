@@ -1,7 +1,7 @@
 import { App } from 'aws-cdk-lib'
-import { AppStage } from './app-stage'
-import { Config } from './config'
-import { StackBase } from './stack-base'
+import { AppStage } from './app-stage.js'
+import type { Config } from './config.js'
+import type { StackBase } from './stack-base.js'
 
 export class Infra {
   readonly app: App

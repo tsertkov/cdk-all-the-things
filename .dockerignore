@@ -1,5 +1,11 @@
+# .dockerignore
+# whitelist based ignore-file
+
+# ignore all
 *
 .*
+
+# whitelist
 !/infra/
 !/lambdas/
 !/scripts/
@@ -9,5 +15,8 @@
 !/Makefile
 !/LICENSE
 
+# ignore whitelisted subpaths
 /infra/cdk.out/
 /infra/node_modules/
+/infra/lambdas/*/node_modules/
+/infra/**/*.js

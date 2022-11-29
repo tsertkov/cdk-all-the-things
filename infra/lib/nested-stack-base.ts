@@ -1,7 +1,7 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { NestedStack } from 'aws-cdk-lib'
-import { StageProps } from './config'
-import { StackBaseProps } from './stack-base'
+import type { StageProps } from './config.js'
+import type { StackBaseProps } from './stack-base.js'
 
 export { StackBaseProps as NestedStackBaseProps }
 

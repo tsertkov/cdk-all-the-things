@@ -1,0 +1,6 @@
+# docker-build-args.txt
+
+node_version=18
+sops_version=v3.7.3
+yq_version=v4.30.4
+age_version=v1.0.0

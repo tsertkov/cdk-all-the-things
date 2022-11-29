@@ -1,41 +1,44 @@
 import { Arn, ArnFormat, Fn } from 'aws-cdk-lib'
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import {
   ArnPrincipal,
   FederatedPrincipal,
   PolicyStatement,
   Role,
 } from 'aws-cdk-lib/aws-iam'
-import { Bucket } from 'aws-cdk-lib/aws-s3'
 import { Repository } from 'aws-cdk-lib/aws-ecr'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import {
   NestedStackBase,
   NestedStackBaseProps,
-} from '../../lib/nested-stack-base'
-import { deterministicName } from '../../lib/utils'
-import { DeployerGlbStageProps } from './deployer-glb-config'
+} from '../../lib/nested-stack-base.js'
+import { deterministicName } from '../../lib/utils.js'
+import type { DeployerGlbStageProps } from './deployer-glb-config.js'
 
 const CI_ROLE_NAME = 'CiRole'
 
-export class StateStack extends NestedStackBase {
+interface StateStackProps extends NestedStackBaseProps {
   readonly config: DeployerGlbStageProps
-  readonly githubOidcProviderArn: string
-  ciRole: Role
-  artifactsBucket: Bucket
-  deployerEcrRepo: Repository
-  deployerLogGroup: LogGroup
+}
 
-  constructor(scope: Construct, id: string, props: NestedStackBaseProps) {
+export class StateStack extends NestedStackBase {
+  override readonly config: DeployerGlbStageProps
+  readonly githubOidcProviderArn: string
+  readonly ciRole: Role
+  readonly deployerEcrRepo: Repository
+  readonly deployerLogGroup: LogGroup
+
+  constructor(scope: Construct, id: string, props: StateStackProps) {
     super(scope, id, props)
+    this.config = props.config
 
     this.githubOidcProviderArn = Fn.importValue(
       this.config.githubOidcArnCfnOutput
     )
 
-    this.initDeployerEcrRepo()
-    this.initDeployerLogGroup()
-    this.initCiRole()
+    this.deployerEcrRepo = this.initDeployerEcrRepo()
+    this.deployerLogGroup = this.initDeployerLogGroup()
+    this.ciRole = this.initCiRole()
 
     if (this.config.nextStage) {
       this.initCiRolePromotionGrants(this.config.nextStage)
@@ -43,7 +46,7 @@ export class StateStack extends NestedStackBase {
   }
 
   private initDeployerLogGroup() {
-    this.deployerLogGroup = new LogGroup(this, 'DeployerLogGroup', {
+    return new LogGroup(this, 'DeployerLogGroup', {
       retention: this.config.logRetentionDays,
       removalPolicy: this.config.removalPolicy,
     })
@@ -98,7 +101,7 @@ export class StateStack extends NestedStackBase {
       'sts:AssumeRoleWithWebIdentity'
     )
 
-    this.ciRole = new Role(this, CI_ROLE_NAME, {
+    const ciRole = new Role(this, CI_ROLE_NAME, {
       roleName: deterministicName(
         { name: CI_ROLE_NAME, app: null, region: null },
         this
@@ -107,14 +110,14 @@ export class StateStack extends NestedStackBase {
     })
 
     // grant permission to push container images to ecr
-    this.ciRole.addToPolicy(
+    ciRole.addToPolicy(
       new PolicyStatement({
         actions: ['ecr:GetAuthorizationToken'],
         resources: ['*'],
       })
     )
 
-    this.deployerEcrRepo.grantPullPush(this.ciRole)
+    this.deployerEcrRepo.grantPullPush(ciRole)
 
     // grant pull access to src image if it is on a different aws account
     if (this.config.prevStage) {
@@ -124,7 +127,7 @@ export class StateStack extends NestedStackBase {
       )
 
       if (prevStageConfig.account !== this.account) {
-        this.ciRole.addToPolicy(
+        ciRole.addToPolicy(
           new PolicyStatement({
             actions: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer'],
             resources: [
@@ -144,7 +147,7 @@ export class StateStack extends NestedStackBase {
     }
 
     // allow starting statemachine execution
-    this.ciRole.addToPolicy(
+    ciRole.addToPolicy(
       new PolicyStatement({
         actions: ['states:StartExecution'],
         resources: [
@@ -169,7 +172,7 @@ export class StateStack extends NestedStackBase {
     )
 
     // allow monitoring and stopping statemachine execution
-    this.ciRole.addToPolicy(
+    ciRole.addToPolicy(
       new PolicyStatement({
         actions: ['states:DescribeExecution', 'states:StopExecution'],
         resources: [
@@ -193,18 +196,22 @@ export class StateStack extends NestedStackBase {
         ],
       })
     )
+
+    return ciRole
   }
 
   private initDeployerEcrRepo() {
-    this.deployerEcrRepo = new Repository(this, 'DeployerEcrRepo', {
+    const deployerEcrRepo = new Repository(this, 'DeployerEcrRepo', {
       repositoryName: this.deployerRepoName(this.config.stageName),
       removalPolicy: this.config.removalPolicy,
       imageScanOnPush: true,
     })
 
-    this.deployerEcrRepo.addLifecycleRule({
+    deployerEcrRepo.addLifecycleRule({
       maxImageCount: this.config.ecrMaxImageCount,
     })
+
+    return deployerEcrRepo
   }
 
   private deployerRepoName(stageName: string) {

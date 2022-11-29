@@ -4,7 +4,7 @@ Multi-account, multi-region, multi-environment AWS CDK and Golang cloud applicat
 
 ## Prerequisites
 
-Tools: make, nodejs, docker, sops, aws-cli, awk, sed, xargs, [yq](https://github.com/mikefarah/yq), [age](https://github.com/FiloSottile/age).
+Tools: make, nodejs, docker, sops, aws-cli, sed, xargs, [yq](https://github.com/mikefarah/yq), [age](https://github.com/FiloSottile/age).
 
 ## Usage
 

@@ -1,23 +1,24 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { CfnOutput } from 'aws-cdk-lib'
-import { deterministicName } from '../../lib/utils'
-import { StackBase, StackBaseProps } from '../../lib/stack-base'
-import { StateStack } from './state-stack'
-import { DeployerGlbStack } from './deployer-glb-stack'
-import { DeployerGlbStageProps } from './deployer-glb-config'
+import { deterministicName } from '../../lib/utils.js'
+import { StackBase, StackBaseProps } from '../../lib/stack-base.js'
+import { StateStack } from './state-stack.js'
+import { DeployerGlbStack } from './deployer-glb-stack.js'
+import type { DeployerGlbStageProps } from './deployer-glb-config.js'
+
+interface DeployerGlbAppStackProps extends StackBaseProps {
+  readonly config: DeployerGlbStageProps
+}
 
 export class DeployerGlbAppStack extends StackBase {
-  readonly config: DeployerGlbStageProps
-  stateStack: StateStack
-  deployerStack: DeployerGlbStack
+  override readonly config: DeployerGlbStageProps
+  readonly stateStack: StateStack
+  readonly deployerStack: DeployerGlbStack
 
-  constructor(scope: Construct, id: string, props: StackBaseProps) {
+  constructor(scope: Construct, id: string, props: DeployerGlbAppStackProps) {
     super(scope, id, props)
-    this.initNestedStacks(props)
-    this.initOutputs()
-  }
+    this.config = props.config
 
-  private initNestedStacks(props: StackBaseProps) {
     this.stateStack = new StateStack(this, 'State', {
       config: props.config,
     })
@@ -26,6 +27,8 @@ export class DeployerGlbAppStack extends StackBase {
       config: props.config,
       stateStack: this.stateStack,
     })
+
+    this.initOutputs()
   }
 
   private initOutputs() {

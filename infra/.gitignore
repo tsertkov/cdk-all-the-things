@@ -1,6 +1,11 @@
+# .gitignore
+
+lambdas/**/package-lock.json
+
+# compiled js files
 *.js
-!jest.config.js
-*.d.ts
+
+# npm modules
 node_modules
 
 # CDK asset staging directory

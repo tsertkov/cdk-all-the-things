@@ -1,9 +1,9 @@
-import { Config, StageProps } from '../../lib/config'
+import { Config, StageProps } from '../../lib/config.js'
 
 export { StageProps as FeStageProps }
 
 export class FeConfig extends Config {
-  get stages(): StageProps[] {
+  override get stages(): StageProps[] {
     return super.stages as StageProps[]
   }
 }

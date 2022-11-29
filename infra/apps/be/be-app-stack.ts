@@ -1,30 +1,30 @@
 import { CfnOutput } from 'aws-cdk-lib'
-import { Construct } from 'constructs'
-import { MonitorStack } from '../../lib/monitor-stack'
-import { StackBase, StackBaseProps } from '../../lib/stack-base'
-import { deterministicName } from '../../lib/utils'
-import { ApiStack } from './api-stack'
-import { ApiStateStack } from './api-state-stack'
-import { EngineStack } from './engine-stack'
-import { EngineStateStack } from './engine-state-stack'
-import { BeStageProps } from './be-config'
+import type { Construct } from 'constructs'
+import { MonitorStack } from '../../lib/monitor-stack.js'
+import { StackBase, StackBaseProps } from '../../lib/stack-base.js'
+import { deterministicName } from '../../lib/utils.js'
+import { ApiStack } from './api-stack.js'
+import { ApiStateStack } from './api-state-stack.js'
+import { EngineStack } from './engine-stack.js'
+import { EngineStateStack } from './engine-state-stack.js'
+import type { BeStageProps } from './be-config.js'
+
+export interface BeAppStackProps extends StackBaseProps {
+  readonly config: BeStageProps
+}
 
 export class BeAppStack extends StackBase {
-  readonly config: BeStageProps
-  engineStack: EngineStack
-  engineStateStack: EngineStateStack
-  apiStack: ApiStack
-  apiStateStack: ApiStateStack
-  monitorStack: MonitorStack
+  override readonly config: BeStageProps
+  readonly engineStack: EngineStack
+  readonly engineStateStack: EngineStateStack
+  readonly apiStack: ApiStack
+  readonly apiStateStack: ApiStateStack
+  readonly monitorStack: MonitorStack
 
-  constructor(scope: Construct, id: string, props: StackBaseProps) {
+  constructor(scope: Construct, id: string, props: BeAppStackProps) {
     super(scope, id, props)
+    this.config = props.config
 
-    this.initNestedStacks()
-    this.initOutputs()
-  }
-
-  private initNestedStacks() {
     this.engineStateStack = new EngineStateStack(this, 'EngineState', {
       config: this.config,
     })
@@ -53,6 +53,8 @@ export class BeAppStack extends StackBase {
         this.engineStack.engineLambda.logGroup.logGroupName,
       ],
     })
+
+    this.initOutputs()
   }
 
   private initOutputs() {

@@ -1,5 +1,5 @@
-import { Config, StageProps } from '../../lib/config'
-import appModules from '..'
+import { Config, StageProps } from '../../lib/config.js'
+import appModules from '../index.js'
 
 export interface DeployerGlbStageProps extends StageProps {
   readonly githubRepo: string
@@ -14,11 +14,14 @@ export interface DeployerGlbStageProps extends StageProps {
 }
 
 export class DeployerGlbConfig extends Config {
-  get stages(): DeployerGlbStageProps[] {
+  override get stages(): DeployerGlbStageProps[] {
     return super.stages as DeployerGlbStageProps[]
   }
 
-  stageConfig(stageName: string, appName: string): DeployerGlbStageProps {
+  override stageConfig(
+    stageName: string,
+    appName: string
+  ): DeployerGlbStageProps {
     const stageConfig = super.stageConfig(
       stageName,
       appName

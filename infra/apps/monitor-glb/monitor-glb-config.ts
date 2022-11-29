@@ -1,11 +1,11 @@
-import { Config, StageProps } from '../../lib/config'
+import { Config, StageProps } from '../../lib/config.js'
 
 export interface MonitorGlbStageProps extends StageProps {
   readonly logsBucketName: string
 }
 
 export class MonitorGlbConfig extends Config {
-  get stages(): MonitorGlbStageProps[] {
+  override get stages(): MonitorGlbStageProps[] {
     return super.stages as MonitorGlbStageProps[]
   }
 }

@@ -1,8 +1,8 @@
-import { AppModule } from '../../lib/app-module'
-import { FeConfig as Config } from './fe-config'
-import { FeAppStack as AppStack } from './fe-app-stack'
+import { AppModule } from '../../lib/app-module.js'
+import { FeConfig } from './fe-config.js'
+import { FeAppStack } from './fe-app-stack.js'
 
-export default {
-  AppStack,
-  Config,
-} as AppModule
+export const fe = new AppModule({
+  appStackClass: FeAppStack,
+  configClass: FeConfig,
+})

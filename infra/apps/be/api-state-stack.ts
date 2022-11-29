@@ -1,33 +1,38 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import {
   NestedStackBase,
   NestedStackBaseProps,
-} from '../../lib/nested-stack-base'
-import { BeStageProps } from './be-config'
+} from '../../lib/nested-stack-base.js'
+import type { BeStageProps } from './be-config.js'
+
+export interface ApiStateStackProps extends NestedStackBaseProps {
+  readonly config: BeStageProps
+}
 
 export class ApiStateStack extends NestedStackBase {
-  readonly config: BeStageProps
-  jobTable: Table
-  restApiLogGroup: LogGroup
+  override readonly config: BeStageProps
+  readonly jobTable: Table
+  readonly restApiLogGroup: LogGroup
 
-  constructor(scope: Construct, id: string, props: NestedStackBaseProps) {
+  constructor(scope: Construct, id: string, props: ApiStateStackProps) {
     super(scope, id, props)
 
-    this.initJobTable()
-    this.initRestApiLogGroup()
+    this.config = props.config
+    this.jobTable = this.initJobTable()
+    this.restApiLogGroup = this.initRestApiLogGroup()
   }
 
   private initRestApiLogGroup() {
-    this.restApiLogGroup = new LogGroup(this, 'RestApiLogGroup', {
+    return new LogGroup(this, 'RestApiLogGroup', {
       retention: this.config.logRetentionDays,
       removalPolicy: this.config.removalPolicy,
     })
   }
 
   private initJobTable() {
-    this.jobTable = new Table(this, 'JobTable', {
+    return new Table(this, 'JobTable', {
       removalPolicy: this.config.removalPolicy,
       partitionKey: {
         name: 'client_id',

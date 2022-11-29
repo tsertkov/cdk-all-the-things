@@ -4,10 +4,12 @@ stage := dev
 app := deployer-glb
 regcode := *
 image_tag := latest
+write_dir := $(CURDIR)
 
 ### vars
 
-.SHELLFLAGS := -eu -c 
+.SECONDARY :
+.SHELLFLAGS := -eu -c
 SHELL := sh
 
 project ?= $(shell yq '.project' $(config_file))
@@ -15,17 +17,16 @@ image_name := infra
 image_platform := linux/amd64
 config_file := config.yaml
 secrets_enabled ?= $(shell yq .secrets.enabled $(config_file))
-secrets_dir := secrets
+secrets_dir := $(write_dir)/secrets
 encrypted_secrets_dir := secrets/encrypted
-sops_version := v3.7.3
 sops_key_file := $(secrets_dir)/.keys/key-$(stage).txt
 sops_cmd := SOPS_AGE_KEY_FILE=$(sops_key_file) sops
 key_secret_name := $(project)/$(stage)/age-key
 key_secret_region ?= $(shell yq '.secrets.keyRegion' $(config_file))
 public_key ?= $(shell grep '^\# public key: ' $(sops_key_file) | sed 's/^.*: //')
 stacks := *-$(stage)-$(regcode)/$(app)
-app_ext := $(shell test ! -f Dockerfile && echo js || echo ts)
-infra_cmd := cd infra && INFRA_APP=$(app) npx cdk -a bin/infra.$(app_ext)
+infra_cmd := cd infra && SECRETS_DIR_PATH=$(write_dir) INFRA_ROOT=$(CURDIR) INFRA_APP=$(app) npx cdk -o $(write_dir)/infra/cdk.out
+docker_build_args ?= $(shell cat docker-build-args.txt | grep -v '^\(\#.*\)\?$$' | xargs -L1 echo --build-arg | xargs)
 apps ?= $(shell echo deployer-glb && yq '.apps | flatten()' $(config_file) | sed 's/- //' | xargs)
 all_regions ?= $(shell yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' config.yaml | sort | uniq)
 aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output text)
@@ -115,8 +116,8 @@ build-lambdas:
 .PHONY: build-infra
 build-infra:
 	@docker build \
-		--build-arg sops_version=$(sops_version) \
 		--platform $(image_platform) \
+		$(docker_build_args) \
 		-t $(image_name):$(image_tag) \
 		.
 
@@ -141,6 +142,7 @@ clean-lambdas:
 
 $(sops_key_file):
 	$(info Fetching secret key: $(key_secret_name) to: $(sops_key_file))
+	@mkdir -p $(shell dirname $(sops_key_file))
 	@aws secretsmanager describe-secret \
 		--region $(key_secret_region) \
 		--secret-id $(key_secret_name) \

@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "scripts": {
+    "test": "d=$PWD && cd .. && NODE_NO_WARNINGS=1 NODE_OPTIONS=--experimental-vm-modules npx jest --roots $d"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-ecr": "^3.216.0",
+    "@aws-sdk/client-lambda": "^3.216.0",
+    "aws-sdk-client-mock": "^2.0.1"
+  }
+}

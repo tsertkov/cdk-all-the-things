@@ -1,6 +1,7 @@
 import * as path from 'path'
 import { Code } from 'aws-cdk-lib/aws-lambda'
-import { StackBase } from './stack-base'
+import type { StackBase } from './stack-base.js'
+import type { NestedStackBase } from './nested-stack-base.js'
 
 export interface DeterministicNameComponents {
   readonly name?: string
@@ -14,7 +15,7 @@ export interface DeterministicNameComponents {
 
 export function deterministicName(
   components: DeterministicNameComponents,
-  stack?: StackBase
+  stack?: StackBase | NestedStackBase
 ): string {
   const separator = components.separator || '-'
   const project = components.project || stack?.config.project
@@ -38,12 +39,16 @@ export function deterministicName(
 export function regionToCode(region: string): string {
   const parts = region.split('-')
 
+  if (typeof parts[1] === 'undefined') {
+    throw new Error(`Invalid region: '${region}'`)
+  }
+
   if (parts[1] === 'southeast') {
     parts[1] = 'se'
   } else if (parts[1] === 'northeast') {
     parts[1] = 'ne'
   } else {
-    parts[1] = parts[1][0]
+    parts[1] = parts[1].substring(0, 1)
   }
 
   return parts.join('')
