@@ -64,6 +64,10 @@ export class DeployerGlbStack extends NestedStackBase {
         handler: 'deployer-version-prepare.handler',
         timeout: Duration.minutes(3),
         memorySize: 128,
+        environment: {
+          LAMBDA_VERSIONS_TO_KEEP:
+            this.config.maxDeployerLambdaVersions.toString(),
+        },
         code: Code.fromAsset(
           path.join(
             this.config.projectRootDir,
@@ -241,10 +245,11 @@ export class DeployerGlbStack extends NestedStackBase {
       service: 'lambda',
       action: 'invoke',
       iamResources: [this.deployerLambda.functionArn],
+      resultPath: '$.deployDeployer',
       parameters: {
         'FunctionName.$': '$.deployerVersion.functionArn',
         Payload: {
-          command: 'diff',
+          command: 'deploy',
           app: this.config.appName, // deployer app name
           stage: this.config.stageName,
           regcode,
@@ -284,12 +289,13 @@ export class DeployerGlbStack extends NestedStackBase {
     // start deployer in codebuild with env vars mapped from task input
     const deployApps = new StepFunctionsStartExecution(this, 'DeployApps', {
       stateMachine: this.appDeployerStateMachine,
+      integrationPattern: IntegrationPattern.RUN_JOB,
       resultPath: '$.deployApps',
       input: TaskInput.fromObject({
-        projectType: 'rw',
         cmd: 'deploy',
         'version.$': '$.version',
-        'appGroups.$': '$.deployAppsInput',
+        'deployerVersion.$': '$.deployerVersion',
+        'appGroups.$': '$.deployAppsInput.deploy',
         // fixme: see comment for prepareDeployAppsInput
         // appGroups: {
         //   deploy: appGroups,
@@ -325,7 +331,6 @@ export class DeployerGlbStack extends NestedStackBase {
       resultPath: '$.diffApps',
       input: TaskInput.fromObject({
         cmd: 'diff',
-        projectType: 'ro',
         'version.$': '$.version',
         'appGroups.$': '$.appGroups.diff',
       }),
@@ -373,8 +378,8 @@ export class DeployerGlbStack extends NestedStackBase {
   private initAppDeployerStateMachine() {
     const paramsToPass = {
       'cmd.$': '$.cmd',
+      'deployerVersion.$': '$.deployerVersion',
       'version.$': '$.version',
-      'projectType.$': '$.projectType',
     }
 
     // app deployment groups are deployed in sequence
@@ -418,12 +423,21 @@ export class DeployerGlbStack extends NestedStackBase {
       appsMapTask.iterator(runDeployer)
     )
 
-    return new StateMachine(this, 'AppDeployerStateMachine', {
-      stateMachineName: deterministicName(
-        { name: 'AppDeployer', region: null, app: null },
-        this
-      ),
-      definition,
-    })
+    const appDeployerStateMachine = new StateMachine(
+      this,
+      'AppDeployerStateMachine',
+      {
+        stateMachineName: deterministicName(
+          { name: 'AppDeployer', region: null, app: null },
+          this
+        ),
+        definition,
+      }
+    )
+
+    // allow state machine invoking deployerLambda
+    this.deployerLambda.grantInvoke(appDeployerStateMachine)
+
+    return appDeployerStateMachine
   }
 }
