@@ -101,4 +101,4 @@ COPY --from=build /app /app
 COPY --from=build /app/infra/lambdas/deployer ${LAMBDA_TASK_ROOT}
 COPY scripts /app/scripts
 COPY secrets /app/secrets
-COPY Makefile LICENSE config.yaml /app
+COPY Makefile LICENSE config.yaml /app/
