@@ -97,7 +97,10 @@ export class DeployerGlbStack extends NestedStackBase {
           'lambda:UpdateFunctionCode',
           'lambda:PublishVersion',
         ],
-        resources: [this.deployerLambda.functionArn],
+        resources: [
+          this.deployerLambda.functionArn,
+          `${this.deployerLambda.functionArn}:*`,
+        ],
       })
     )
 
@@ -295,12 +298,12 @@ export class DeployerGlbStack extends NestedStackBase {
         cmd: 'deploy',
         'version.$': '$.version',
         'deployerVersion.$': '$.deployerVersion',
-        'appGroups.$': '$.deployAppsInput.deploy',
         // fixme: see comment for prepareDeployAppsInput
         // appGroups: {
         //   deploy: appGroups,
         //   diff: [appGroups.flat()],
         // },
+        'appGroups.$': '$.deployAppsInput.deploy',
       }),
     })
 
@@ -314,6 +317,7 @@ export class DeployerGlbStack extends NestedStackBase {
       service: 'lambda',
       action: 'invoke',
       iamResources: [this.deployerLambda.functionArn],
+      resultPath: '$.diffDeployer',
       parameters: {
         'FunctionName.$': '$.deployerVersion.functionArn',
         Payload: {
@@ -325,6 +329,11 @@ export class DeployerGlbStack extends NestedStackBase {
       },
     })
 
+    const approveDeployerDiff = new Pass(this, 'ApproveDeployerDiff', {
+      comment: 'Approve deployer diff',
+      resultPath: JsonPath.DISCARD,
+    })
+
     const diffApps = new StepFunctionsStartExecution(this, 'DiffApps', {
       stateMachine: this.appDeployerStateMachine,
       integrationPattern: IntegrationPattern.RUN_JOB,
@@ -332,13 +341,23 @@ export class DeployerGlbStack extends NestedStackBase {
       input: TaskInput.fromObject({
         cmd: 'diff',
         'version.$': '$.version',
-        'appGroups.$': '$.appGroups.diff',
+        'deployerVersion.functionArn$': '$.deployerVersion.functionArn',
+        'appGroups.$': '$.deployAppsInput.diff',
       }),
     })
 
+    const approveAppsDiffs = new Pass(this, 'ApproveAppsDiffs', {
+      comment: 'Approve apps diffs',
+      resultPath: JsonPath.DISCARD,
+    })
+
     return diffDeployer.next(
-      deployDeployer.next(
-        prepareDeployAppsInput.next(diffApps.next(deployApps))
+      approveDeployerDiff.next(
+        deployDeployer.next(
+          prepareDeployAppsInput.next(
+            diffApps.next(approveAppsDiffs.next(deployApps))
+          )
+        )
       )
     )
   }
