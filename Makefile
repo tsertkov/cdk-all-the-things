@@ -115,7 +115,7 @@ build-lambdas:
 
 .PHONY: build-infra
 build-infra:
-	@docker build \
+	@DOCKER_BUILDKIT=1 docker build \
 		--platform $(image_platform) \
 		$(docker_build_args) \
 		-t $(image_name):$(image_tag) \
