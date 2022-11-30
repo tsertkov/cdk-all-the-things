@@ -6,7 +6,7 @@ import {
   PolicyStatement,
   Role,
 } from 'aws-cdk-lib/aws-iam'
-import { Repository } from 'aws-cdk-lib/aws-ecr'
+import { IRepository, Repository } from 'aws-cdk-lib/aws-ecr'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import {
   NestedStackBase,
@@ -25,7 +25,7 @@ export class StateStack extends NestedStackBase {
   override readonly config: DeployerGlbStageProps
   readonly githubOidcProviderArn: string
   readonly ciRole: Role
-  readonly deployerEcrRepo: Repository
+  readonly deployerEcrRepo: IRepository
   readonly deployerLogGroup: LogGroup
 
   constructor(scope: Construct, id: string, props: StateStackProps) {
@@ -201,17 +201,11 @@ export class StateStack extends NestedStackBase {
   }
 
   private initDeployerEcrRepo() {
-    const deployerEcrRepo = new Repository(this, 'DeployerEcrRepo', {
-      repositoryName: this.deployerRepoName(this.config.stageName),
-      removalPolicy: this.config.removalPolicy,
-      imageScanOnPush: true,
-    })
-
-    deployerEcrRepo.addLifecycleRule({
-      maxImageCount: this.config.ecrMaxImageCount,
-    })
-
-    return deployerEcrRepo
+    return Repository.fromRepositoryName(
+      this,
+      'DeployerEcrRepo',
+      this.deployerRepoName(this.config.stageName)
+    )
   }
 
   private deployerRepoName(stageName: string) {

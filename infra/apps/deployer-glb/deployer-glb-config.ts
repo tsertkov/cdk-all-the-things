@@ -7,7 +7,6 @@ export interface DeployerGlbStageProps extends StageProps {
   readonly noApprovalDeploy: boolean
   readonly nextStage?: string
   readonly prevStage?: string
-  readonly ecrMaxImageCount: number
   readonly maxDeployerLambdaVersions: number
   rootConfig: Config
   appModules: string[]

@@ -13,9 +13,12 @@ write_dir := $(CURDIR)
 SHELL := sh
 
 project ?= $(shell yq '.project' $(config_file))
+project_lc ?= $(shell echo $(project) | tr '[:upper:]' '[:lower:]')
 image_name := infra
 image_platform := linux/amd64
 config_file := config.yaml
+ecr_max_image_count ?= $(shell test "$(stage)" = "dev" && echo 5 || echo 10)
+ecr_image_mutability ?= $(shell test "$(stage)" = "dev" && echo MUTABLE || echo IMUTABLE)
 secrets_enabled ?= $(shell yq .secrets.enabled $(config_file))
 secrets_dir := $(write_dir)/secrets
 encrypted_secrets_dir := secrets/encrypted
@@ -103,6 +106,28 @@ bootstrap-secret-key:
 	age-keygen -o $(sops_key_file); \
 	aws secretsmanager create-secret --name $(secret_create_or_update_args) 2>/dev/null \
 		||	aws secretsmanager update-secret --secret-id $(secret_create_or_update_args)
+
+.PHONY: bootstrap-deployer-ecr
+bootstrap-deployer-ecr:
+	$(info Creating deployer ecr repository for $(stage))
+	@aws ecr describe-repositories --repository-names $(project_lc)-$(stage)-deployer > /dev/null || \
+		aws ecr create-repository --repository-name $(project_lc)-$(stage)-deployer \
+			--image-tag-mutability $(ecr_image_mutability) \
+			--image-scanning-configuration '{ "scanOnPush": true }' \
+			--tags Key=appname,Value=$(app) Key=project,Value=$(project) Key=stage,Value=$(stage)
+	$(info Setting lifecycle policy for ecr repository)
+	@aws ecr put-lifecycle-policy --repository-name $(project_lc)-$(stage)-deployer \
+		--lifecycle-policy-text '{ "rules": [{ \
+				"rulePriority": 1, \
+				"selection": { \
+					"tagStatus": "any", \
+					"countType": "imageCountMoreThan", \
+					"countNumber": $(ecr_max_image_count) \
+				}, \
+				"action": { \
+					"type": "expire" \
+				} \
+		}]}'
 
 ### build commands
 
