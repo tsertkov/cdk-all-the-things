@@ -78,13 +78,65 @@ describe('deployer-version-prepare', () => {
     })
   })
 
-  describe('Given not all required input params given', () => {
+  describe('Given not all required params were provided in the input', () => {
     it('should throw', async () => {
       await expect(
         // eslint-disable-next-line
         // @ts-ignore: invalid function input
         handler({})
       ).rejects.toThrow()
+    })
+  })
+
+  describe('Given ecr image was updated, but image tag did not update', () => {
+    const versions = [
+      {
+        FunctionArn: 'arn-1',
+        CodeSha256: 'sha256:new-sha1',
+        Version: '1',
+      },
+    ] as FunctionConfiguration[]
+
+    beforeEach(() => {
+      // mock lambda list-versions-by-function
+      lambdaClientMock
+        .on(ListVersionsByFunctionCommand)
+        .resolves({ Versions: versions })
+
+      // mock lambda UpdateFunctionCodeCommand
+      lambdaClientMock
+        .on(UpdateFunctionCodeCommand)
+        .resolves({ FunctionArn: functionVersionArn })
+
+      // mock lambda GetFunctionCommand
+      lambdaClientMock.on(GetFunctionCommand).resolves({
+        Configuration: {
+          State: 'Active',
+        },
+      })
+
+      // mock ecr batch-get-image
+      ecrClientMock.on(BatchGetImageCommand).resolves({
+        images: [
+          {
+            imageId: {
+              imageDigest: `sha256:${imageDigest}`,
+              imageTag,
+            },
+          },
+        ],
+      })
+    })
+
+    it('should return new lambda version', async () => {
+      const res = await invokeHandlerWithDefaulParams()
+      expect(res).toBe(functionVersionArn)
+      expect(
+        lambdaClientMock.commandCalls(UpdateFunctionCodeCommand, {
+          FunctionName: deployerFunctionName,
+          Publish: true,
+        })
+      )
     })
   })
 
