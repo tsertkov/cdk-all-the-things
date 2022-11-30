@@ -2,5 +2,8 @@
 
 node_version=18
 sops_version=v3.7.3
+sops_sha1sum=44fd328c0125d484dfda9651b3190494382ad8d2
 yq_version=v4.30.4
+yq_sha1sum=df82c576c2caf4a2d8d85e00b87c68a818c2b902
 age_version=v1.0.0
+age_sha1sum=d99bb97721d22357ab8cde111c9d479036415844
