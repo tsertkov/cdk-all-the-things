@@ -35,6 +35,13 @@ aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output t
 all_regions ?= $(shell \
 	yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' \
 		$(config_file) | sort | uniq)
+deployer_region ?= $(shell \
+	yq '(.deployer-glb.stages.$(stage).regions // .deployer-glb.common.regions)[]' $(config_file))
+ecr_repo_uri ?= $(shell \
+	aws ecr describe-repositories \
+		--repository-names $(project_lc)-$(stage)-deployer \
+		--output text --query 'repositories[0].repositoryUri' \
+	):initial
 ecr_max_image_count ?= $(shell \
 	yq '.bootstrap.deployer-ecr.stages.$(stage).ecr_max_image_count // .bootstrap.deployer-ecr.common.ecr_max_image_count' \
 		$(config_file))
@@ -123,6 +130,7 @@ bootstrap-deployer-ecr:
 			--tags Key=appname,Value=$(app) Key=project,Value=$(project) Key=stage,Value=$(stage)
 	$(info Setting lifecycle policy for ecr repository)
 	@aws ecr put-lifecycle-policy --repository-name $(project_lc)-$(stage)-deployer \
+		--query lifecyclePolicyText --output text \
 		--lifecycle-policy-text '{ "rules": [{ \
 				"rulePriority": 1, \
 				"selection": { \
@@ -134,6 +142,16 @@ bootstrap-deployer-ecr:
 					"type": "expire" \
 				} \
 		}]}'
+
+.PHONY: bootstrap-initial-deployer
+bootstrap-initial-deployer: bootstrap-deployer-ecr
+	$(info Upload initial deployer container image for $(stage))
+	@aws ecr get-login-password --region $(deployer_region) | \
+		docker login --username AWS --password-stdin $(shell \
+			aws sts get-caller-identity --query Account --output text).dkr.ecr.$(deployer_region).amazonaws.com
+	@docker pull public.ecr.aws/lambda/nodejs:18
+	@docker tag public.ecr.aws/lambda/nodejs:18 $(ecr_repo_uri)
+	@docker push $(ecr_repo_uri)
 
 ### build commands
 

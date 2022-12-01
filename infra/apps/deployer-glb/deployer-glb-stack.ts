@@ -118,9 +118,8 @@ export class DeployerGlbStack extends NestedStackBase {
   private initDeployerLambda() {
     const lambda = new DockerImageFunction(this, 'DeployerLambda', {
       code: DockerImageCode.fromEcr(this.stateStack.deployerEcrRepo, {
-        // todo: bootstrap deployer ecr repo and initial image outside of this stack
-        // tagOrDigest: 'initial',
-        tagOrDigest: 'latest',
+        // tag of initial container image provisioned during bootstrap
+        tagOrDigest: 'initial',
         entrypoint: ['/lambda-entrypoint.sh'],
         cmd: ['deployer.handler'],
         workingDirectory: '/var/task',
