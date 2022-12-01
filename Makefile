@@ -146,9 +146,7 @@ bootstrap-deployer-ecr:
 .PHONY: bootstrap-initial-deployer
 bootstrap-initial-deployer: bootstrap-deployer-ecr
 	$(info Upload initial deployer container image for $(stage))
-	@aws ecr get-login-password --region $(deployer_region) | \
-		docker login --username AWS --password-stdin $(shell \
-			aws sts get-caller-identity --query Account --output text).dkr.ecr.$(deployer_region).amazonaws.com
+	@$(aws ecr get-login --no-include-email --region $(deployer_region))
 	@docker pull public.ecr.aws/lambda/nodejs:18
 	@docker tag public.ecr.aws/lambda/nodejs:18 $(ecr_repo_uri)
 	@docker push $(ecr_repo_uri)
