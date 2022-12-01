@@ -37,6 +37,7 @@ all_regions ?= $(shell \
 		$(config_file) | sort | uniq)
 deployer_region ?= $(shell \
 	yq '(.deployer-glb.stages.$(stage).regions // .deployer-glb.common.regions)[]' $(config_file))
+ecr_initial_image := public.ecr.aws/lambda/nodejs:18
 ecr_repo_uri ?= $(shell \
 	aws ecr describe-repositories \
 		--repository-names $(project_lc)-$(stage)-deployer \
@@ -147,8 +148,8 @@ bootstrap-deployer-ecr:
 bootstrap-initial-deployer: bootstrap-deployer-ecr
 	$(info Upload initial deployer container image for $(stage))
 	@$(aws ecr get-login --no-include-email --region $(deployer_region))
-	@docker pull public.ecr.aws/lambda/nodejs:18
-	@docker tag public.ecr.aws/lambda/nodejs:18 $(ecr_repo_uri)
+	@docker pull $(ecr_initial_image)
+	@docker tag $(ecr_initial_image) $(ecr_repo_uri)
 	@docker push $(ecr_repo_uri)
 
 ### build commands
