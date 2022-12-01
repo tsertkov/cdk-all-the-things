@@ -1,8 +1,8 @@
-import { AppModule } from '../../lib/app-module'
-import { MonitorGlbConfig as Config } from './monitor-glb-config'
-import { MonitorGlbAppStack as AppStack } from './monitor-glb-app-stack'
+import { AppModule } from '../../lib/app-module.js'
+import { MonitorGlbConfig } from './monitor-glb-config.js'
+import { MonitorGlbAppStack } from './monitor-glb-app-stack.js'
 
-export default {
-  AppStack,
-  Config,
-} as AppModule
+export const monitorGlb = new AppModule({
+  appStackClass: MonitorGlbAppStack,
+  configClass: MonitorGlbConfig,
+})

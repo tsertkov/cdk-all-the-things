@@ -1,8 +1,8 @@
-import { AppModule } from '../../lib/app-module'
-import { DeployerGlbAppStack as AppStack } from './deployer-glb-app-stack'
-import { DeployerGlbConfig as Config } from './deployer-glb-config'
+import { AppModule } from '../../lib/app-module.js'
+import { DeployerGlbAppStack } from './deployer-glb-app-stack.js'
+import { DeployerGlbConfig } from './deployer-glb-config.js'
 
-export default {
-  AppStack,
-  Config,
-} as AppModule
+export const deployerGlb = new AppModule({
+  appStackClass: DeployerGlbAppStack,
+  configClass: DeployerGlbConfig,
+})

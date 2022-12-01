@@ -1,4 +1,4 @@
-import { Config, StageProps } from '../../lib/config'
+import { Config, StageProps } from '../../lib/config.js'
 
 export interface MonitorStageProps extends StageProps {
   readonly logsBucketName: string
@@ -6,7 +6,7 @@ export interface MonitorStageProps extends StageProps {
 }
 
 export class MonitorConfig extends Config {
-  get stages(): MonitorStageProps[] {
+  override get stages(): MonitorStageProps[] {
     return super.stages as MonitorStageProps[]
   }
 }

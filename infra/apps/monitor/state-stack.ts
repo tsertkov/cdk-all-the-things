@@ -1,25 +1,30 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { LogGroup } from 'aws-cdk-lib/aws-logs'
 import { CfnGroup } from 'aws-cdk-lib/aws-resourcegroups'
 import {
   NestedStackBase,
   NestedStackBaseProps,
-} from '../../lib/nested-stack-base'
-import { MonitorStageProps } from './monitor-config'
+} from '../../lib/nested-stack-base.js'
+import type { MonitorStageProps } from './monitor-config.js'
+
+interface StateStackProps extends NestedStackBaseProps {
+  readonly config: MonitorStageProps
+}
 
 export class StateStack extends NestedStackBase {
-  readonly config: MonitorStageProps
-  logDeliveryLogGroup: LogGroup
-  resourceGroup: CfnGroup
+  override readonly config: MonitorStageProps
+  readonly logDeliveryLogGroup: LogGroup
+  readonly resourceGroup: CfnGroup
 
-  constructor(scope: Construct, id: string, props: NestedStackBaseProps) {
+  constructor(scope: Construct, id: string, props: StateStackProps) {
     super(scope, id, props)
-    this.initResourceGroup()
-    this.initLogDeliveryLogGroup()
+    this.config = props.config
+    this.resourceGroup = this.initResourceGroup()
+    this.logDeliveryLogGroup = this.initLogDeliveryLogGroup()
   }
 
   private initResourceGroup() {
-    this.resourceGroup = new CfnGroup(this, 'ResourceGroup', {
+    return new CfnGroup(this, 'ResourceGroup', {
       name: `${this.config.project}-${this.config.stageName}`,
       resourceQuery: {
         type: 'TAG_FILTERS_1_0',
@@ -36,7 +41,7 @@ export class StateStack extends NestedStackBase {
   }
 
   private initLogDeliveryLogGroup() {
-    this.logDeliveryLogGroup = new LogGroup(this, 'LogDelivery', {
+    return new LogGroup(this, 'LogDelivery', {
       retention: this.config.logRetentionDays,
       removalPolicy: this.config.removalPolicy,
     })

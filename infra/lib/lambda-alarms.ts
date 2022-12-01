@@ -1,8 +1,8 @@
 import { Duration } from 'aws-cdk-lib'
 import { Alarm, ComparisonOperator } from 'aws-cdk-lib/aws-cloudwatch'
-import { Function as Lambda } from 'aws-cdk-lib/aws-lambda'
-import { StackBase } from './stack-base'
-import { deterministicName } from './utils'
+import type { Function as Lambda } from 'aws-cdk-lib/aws-lambda'
+import type { StackBase } from './stack-base.js'
+import { deterministicName } from './utils.js'
 
 export enum LambdaMetric {
   ERRORS = 'errors',

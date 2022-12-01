@@ -1,8 +1,8 @@
-import { Construct } from 'constructs'
 import { Stage, StageProps } from 'aws-cdk-lib'
-import { StageProps as StageConfigProps } from './config'
-import { deterministicName } from './utils'
-import { StackBase } from './stack-base'
+import type { Construct } from 'constructs'
+import type { StageProps as StageConfigProps } from './config.js'
+import type { StackBase } from './stack-base.js'
+import { deterministicName } from './utils.js'
 
 export interface AppStageProps {
   readonly stageProps: StageProps
@@ -16,11 +16,11 @@ export class AppStage extends Stage {
   constructor(scope: Construct, props: AppStageProps) {
     const id = stageIdFromProps(props)
     super(scope, id, props.stageProps)
-    this.initAppStack(props)
+    this.appStack = this.initAppStack(props)
   }
 
   private initAppStack(props: AppStageProps) {
-    this.appStack = new props.appStackClass(this, props.config.appName, {
+    return new props.appStackClass(this, props.config.appName, {
       stackProps: {
         tags: props.config.tags,
       },

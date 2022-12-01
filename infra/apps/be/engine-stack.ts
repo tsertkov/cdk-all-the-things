@@ -1,4 +1,4 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { Duration } from 'aws-cdk-lib'
 import {
   Alias,
@@ -7,32 +7,46 @@ import {
   Runtime,
 } from 'aws-cdk-lib/aws-lambda'
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources'
-import { Queue } from 'aws-cdk-lib/aws-sqs'
+import type { Queue } from 'aws-cdk-lib/aws-sqs'
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
-import { codeFromDir, deterministicName } from '../../lib/utils'
+import { codeFromDir, deterministicName } from '../../lib/utils.js'
 import {
   NestedStackBase,
   NestedStackBaseProps,
-} from '../../lib/nested-stack-base'
-import { addLambdaMetricAlarms, LambdaMetric } from '../../lib/lambda-alarms'
-import { BeStageProps } from './be-config'
-import { EngineStateStack } from './engine-state-stack'
+} from '../../lib/nested-stack-base.js'
+import { addLambdaMetricAlarms, LambdaMetric } from '../../lib/lambda-alarms.js'
+import type { BeStageProps } from './be-config.js'
+import type { EngineStateStack } from './engine-state-stack.js'
 
 export interface EngineStackProps extends NestedStackBaseProps {
+  readonly config: BeStageProps
   readonly engineStateStack: EngineStateStack
 }
 
 export class EngineStack extends NestedStackBase {
-  readonly config: BeStageProps
+  override readonly config: BeStageProps
   readonly jobQueue: Queue
-  engineLambda: Lambda
-  engineLambdaAlias: Alias
+  readonly engineLambda: Lambda
+  readonly engineLambdaAlias: Alias
 
   constructor(scope: Construct, id: string, props: EngineStackProps) {
     super(scope, id, props)
 
+    this.config = props.config
     this.jobQueue = props.engineStateStack.jobQueue
-    this.initEngineLambda()
+    this.engineLambda = this.initEngineLambda()
+    this.engineLambdaAlias = this.initEngineLambdaAlias()
+  }
+
+  private initEngineLambdaAlias() {
+    const engineLambdaAlias = new Alias(this, 'EngineLambdaAlias', {
+      aliasName: 'live',
+      version: this.engineLambda.currentVersion,
+    })
+
+    // subscribe lambda to jobQueue
+    engineLambdaAlias.addEventSource(new SqsEventSource(this.jobQueue))
+    return engineLambdaAlias
   }
 
   private initEngineLambda() {
@@ -48,7 +62,7 @@ export class EngineStack extends NestedStackBase {
       this
     )
 
-    this.engineLambda = new Lambda(this, 'EngineLambda', {
+    const engineLambda = new Lambda(this, 'EngineLambda', {
       code,
       description: deterministicName({ name: 'EngineLambda ' }, this),
       runtime: Runtime.GO_1_X,
@@ -63,27 +77,21 @@ export class EngineStack extends NestedStackBase {
       },
     })
 
+    // grant lambda read access to testsecret
+    Secret.fromSecretNameV2(this, 'TestSecret', testsecretName).grantRead(
+      engineLambda
+    )
+
     addLambdaMetricAlarms({
       stack: this,
       id: 'EngineLambda',
-      lambda: this.engineLambda,
+      lambda: engineLambda,
       metricAlarms: [
         { metric: LambdaMetric.ERRORS },
         { metric: LambdaMetric.DURATION },
       ],
     })
 
-    this.engineLambdaAlias = new Alias(this, 'EngineLambdaAlias', {
-      aliasName: 'live',
-      version: this.engineLambda.currentVersion,
-    })
-
-    // subscribe lambda to jobQueue
-    this.engineLambdaAlias.addEventSource(new SqsEventSource(this.jobQueue))
-
-    // grant lambda read access to testsecret
-    Secret.fromSecretNameV2(this, 'TestSecret', testsecretName).grantRead(
-      this.engineLambdaAlias
-    )
+    return engineLambda
   }
 }

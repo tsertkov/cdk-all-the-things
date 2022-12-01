@@ -1,8 +1,8 @@
-import { readdirSync, readFileSync } from 'fs'
+import { existsSync, readdirSync, readFileSync } from 'fs'
 import * as path from 'path'
 import { deepmerge } from 'deepmerge-ts'
-import { RemovalPolicy } from 'aws-cdk-lib'
-import { RetentionDays } from 'aws-cdk-lib/aws-logs'
+import type { RemovalPolicy } from 'aws-cdk-lib'
+import type { RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { parse as parseYaml } from 'yaml'
 
 export interface StageProps {
@@ -32,6 +32,7 @@ export interface ConfigProps {
   configDirPath: string
   configFileName?: string
   secretsDirName?: string
+  secretsDirPath?: string
   secretsFileRegExp?: RegExp
 }
 
@@ -52,6 +53,7 @@ export class Config {
       configDirPath,
       configFileName,
       secretsDirName,
+      secretsDirPath,
       secretsFileRegExp,
     } = Object.assign({}, DEFAULT_CONFIG_PROPS, props)
 
@@ -60,6 +62,7 @@ export class Config {
 
     this.rawConfig = this.readConfigs(
       configDirPath,
+      secretsDirPath || configDirPath,
       configFileName,
       secretsDirName,
       secretsFileRegExp
@@ -68,6 +71,7 @@ export class Config {
 
   private readConfigs(
     configDirPath: string,
+    secretsDirPath: string,
     configFileName: string,
     secretsDirName: string,
     secretsFileRegExp: RegExp
@@ -76,16 +80,19 @@ export class Config {
       this.readConfigFile(path.join(configDirPath, configFileName)),
     ]
 
-    const secretsDirPath = path.join(configDirPath, secretsDirName)
-    readdirSync(secretsDirPath).forEach((file) => {
-      const m = file.match(secretsFileRegExp)
-      if (!m) return
+    // read secrets
+    const secretsDirPathFull = path.join(secretsDirPath, secretsDirName)
+    if (existsSync(secretsDirPathFull)) {
+      readdirSync(secretsDirPathFull).forEach((file) => {
+        const m = file.match(secretsFileRegExp)
+        if (!m) return
 
-      const config = this.readConfigFile(path.join(secretsDirPath, file))
-      if (config === null) return
+        const config = this.readConfigFile(path.join(secretsDirPathFull, file))
+        if (config === null) return
 
-      configs.push(config)
-    })
+        configs.push(config)
+      })
+    }
 
     return deepmerge(...configs) as RawConfig
   }
@@ -118,9 +125,9 @@ export class Config {
       {},
       this.rawConfig.common,
       this.rawConfig.stages[stageName],
-      appConfig.common || {},
-      appConfig.stages && appConfig.stages[stageName]
-        ? appConfig.stages[stageName]
+      appConfig['common'] || {},
+      appConfig['stages'] && appConfig['stages'][stageName]
+        ? appConfig['stages'][stageName]
         : {},
       {
         project: this.rawConfig.project,

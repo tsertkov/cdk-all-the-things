@@ -1,22 +1,25 @@
 import * as path from 'path'
 import { Template } from 'aws-cdk-lib/assertions'
-import { Infra } from '../lib/infra'
-import { AppStage } from '../lib/app-stage'
-import be from '../apps/be'
+import { Infra } from '../lib/infra.js'
+import type { AppStage } from '../lib/app-stage.js'
+import { be } from '../apps/be/index.js'
 
 let infra: Infra
 let stage: AppStage
 const APP_NAME = 'be'
 
 beforeAll(() => {
-  const { Config, AppStack } = be
-  const config = new Config({
+  const config = new be.configClass({
     appName: APP_NAME,
-    configDirPath: path.join(__dirname, '..', '..'),
+    configDirPath: path.join(process.cwd(), '..'),
   })
-  infra = new Infra(config, AppStack)
+  infra = new Infra(config, be.appStackClass)
 
   // test only first stage
+  if (!infra.stages[0]) {
+    throw new Error('Failed creating cdk stage')
+  }
+
   stage = infra.stages[0]
 })
 

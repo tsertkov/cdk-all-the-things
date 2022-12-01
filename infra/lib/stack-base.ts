@@ -1,6 +1,6 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { Stack, StackProps } from 'aws-cdk-lib'
-import { StageProps } from './config'
+import type { StageProps } from './config.js'
 
 export interface StackBaseProps {
   readonly stackProps?: StackProps

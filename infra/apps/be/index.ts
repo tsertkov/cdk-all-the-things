@@ -1,8 +1,8 @@
-import { AppModule } from '../../lib/app-module'
-import { BeAppStack } from './be-app-stack'
-import { BeConfig } from './be-config'
+import { AppModule } from '../../lib/app-module.js'
+import { BeAppStack } from './be-app-stack.js'
+import { BeConfig } from './be-config.js'
 
-export default {
-  AppStack: BeAppStack,
-  Config: BeConfig,
-} as AppModule
+export const be = new AppModule({
+  appStackClass: BeAppStack,
+  configClass: BeConfig,
+})

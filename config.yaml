@@ -4,6 +4,15 @@ secrets:
   enabled: true
   keyRegion: eu-central-1
 
+bootstrap:
+  deployer-ecr:
+    common:
+      ecr_max_image_count: 10
+      image_mutability: IMUTABLE
+    stages:
+      dev:
+        image_mutability: MUTABLE
+
 common:
   removalPolicy: retain
   logRetentionDays: 90
@@ -29,13 +38,12 @@ deployer-glb:
   common:
     githubRepo: tsertkov/cdk-all-the-things
     githubOidcArnCfnOutput: GithubOidcArn
-    ecrMaxImageCount: 30
+    maxDeployerLambdaVersions: 10
     regions:
       - eu-central-1
   stages:
     dev:
       noApprovalDeploy: true
-      ecrMaxImageCount: 10
       nextStage: stg
     stg:
       prevStage: dev

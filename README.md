@@ -4,7 +4,7 @@ Multi-account, multi-region, multi-environment AWS CDK and Golang cloud applicat
 
 ## Prerequisites
 
-Tools: make, nodejs, docker, sops, aws-cli, awk, sed, xargs, [yq](https://github.com/mikefarah/yq), [age](https://github.com/FiloSottile/age).
+Tools: make, nodejs, docker, sops, aws-cli, sed, xargs, [yq](https://github.com/mikefarah/yq), [age](https://github.com/FiloSottile/age).
 
 ## Usage
 
@@ -15,6 +15,7 @@ Follow bootstrapping instructions to prepare local and aws environment. Use make
 - `git clone ...` - Clone this git repo
 - Edit configuration parameters in `config.yaml`
 - `make init` - Install dependencies
+- `make bootstrap-initial-deployer` - Bootstrap deployer ecr repo & initial deployer image
 - `make bootstrap-cdk` - Bootstrap cdk for all apps regions
 - `make bootstrap-github-oidc` - Optionally bootstrap github oidc if Github Actions are used for deployments
 - `make bootstrap-secret-key` - Generage age secret key and store it in the cloud
@@ -120,7 +121,7 @@ Main job of deployer is to run CloudFormation stack updates. It uses CodeBuild t
 13. CloudFormation deploy.
 14. Create/update secrets in SecretsManager.
 
-## Containerized deployer
+## Standalone deployer image
 
 Automated pipelines use deployer container image to execute deployments.
 

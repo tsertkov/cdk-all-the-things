@@ -1,8 +1,8 @@
-import { AppModule } from '../../lib/app-module'
-import { MonitorConfig } from './monitor-config'
-import { MonitorAppStack } from './monitor-app-stack'
+import { AppModule } from '../../lib/app-module.js'
+import { MonitorConfig } from './monitor-config.js'
+import { MonitorAppStack } from './monitor-app-stack.js'
 
-export default {
-  Config: MonitorConfig,
-  AppStack: MonitorAppStack,
-} as AppModule
+export const monitor = new AppModule({
+  appStackClass: MonitorAppStack,
+  configClass: MonitorConfig,
+})

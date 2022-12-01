@@ -1,4 +1,4 @@
-import { Construct } from 'constructs'
+import type { Construct } from 'constructs'
 import { Duration } from 'aws-cdk-lib'
 import {
   Alias,
@@ -13,46 +13,49 @@ import {
   LogGroupLogDestination,
   MethodLoggingLevel,
 } from 'aws-cdk-lib/aws-apigateway'
-import { LogGroup } from 'aws-cdk-lib/aws-logs'
-import { Table } from 'aws-cdk-lib/aws-dynamodb'
-import { Queue } from 'aws-cdk-lib/aws-sqs'
+import type { LogGroup } from 'aws-cdk-lib/aws-logs'
+import type { Table } from 'aws-cdk-lib/aws-dynamodb'
+import type { Queue } from 'aws-cdk-lib/aws-sqs'
 import {
   NestedStackBase,
   NestedStackBaseProps,
-} from '../../lib/nested-stack-base'
-import { codeFromDir, deterministicName } from '../../lib/utils'
-import { addLambdaMetricAlarms, LambdaMetric } from '../../lib/lambda-alarms'
-import { ApiStateStack } from './api-state-stack'
-import { EngineStateStack } from './engine-state-stack'
-import { BeStageProps } from './be-config'
+} from '../../lib/nested-stack-base.js'
+import { codeFromDir, deterministicName } from '../../lib/utils.js'
+import { addLambdaMetricAlarms, LambdaMetric } from '../../lib/lambda-alarms.js'
+import type { ApiStateStack } from './api-state-stack.js'
+import type { EngineStateStack } from './engine-state-stack.js'
+import type { BeStageProps } from './be-config.js'
 
 export interface ApiStackProps extends NestedStackBaseProps {
+  readonly config: BeStageProps
   readonly engineStateStack: EngineStateStack
   readonly apiStateStack: ApiStateStack
 }
 
 export class ApiStack extends NestedStackBase {
-  readonly config: BeStageProps
+  override readonly config: BeStageProps
   readonly restApiLogGroup: LogGroup
   readonly jobQueue: Queue
   readonly jobTable: Table
-  apiLambda: Lambda
-  apiLambdaAlias: Alias
-  restApi: LambdaRestApi
+  readonly apiLambda: Lambda
+  readonly apiLambdaAlias: Alias
+  readonly restApi: LambdaRestApi
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props)
 
+    this.config = props.config
     this.jobQueue = props.engineStateStack.jobQueue
     this.jobTable = props.apiStateStack.jobTable
     this.restApiLogGroup = props.apiStateStack.restApiLogGroup
 
-    this.initApiLambda()
-    this.initRestApi()
+    this.apiLambda = this.initApiLambda()
+    this.apiLambdaAlias = this.initApiLambdaAlias()
+    this.restApi = this.initRestApi()
   }
 
   private initRestApi() {
-    this.restApi = new LambdaRestApi(this, 'RestApi', {
+    return new LambdaRestApi(this, 'RestApi', {
       restApiName: deterministicName({ name: 'RestApi' }, this),
       handler: this.apiLambdaAlias,
       endpointTypes: [EndpointType.REGIONAL],
@@ -67,10 +70,17 @@ export class ApiStack extends NestedStackBase {
     })
   }
 
+  private initApiLambdaAlias() {
+    return new Alias(this, 'ApiLambdaAlias', {
+      aliasName: 'live',
+      version: this.apiLambda.currentVersion,
+    })
+  }
+
   private initApiLambda() {
     const code = codeFromDir(this.config.projectRootDir, 'go-app/bin/api')
 
-    this.apiLambda = new Lambda(this, 'ApiLambda', {
+    const apiLambda = new Lambda(this, 'ApiLambda', {
       code,
       description: deterministicName({ name: 'ApiLambda' }, this),
       runtime: Runtime.GO_1_X,
@@ -90,7 +100,7 @@ export class ApiStack extends NestedStackBase {
     addLambdaMetricAlarms({
       stack: this,
       id: 'ApiLambda',
-      lambda: this.apiLambda,
+      lambda: apiLambda,
       metricAlarms: [
         { metric: LambdaMetric.ERRORS },
         { metric: LambdaMetric.DURATION },
@@ -98,14 +108,11 @@ export class ApiStack extends NestedStackBase {
     })
 
     // allow lambda to send sqs messages into job queue
-    this.jobQueue.grantSendMessages(this.apiLambda)
+    this.jobQueue.grantSendMessages(apiLambda)
 
     // allow lambda rw dynamodb
-    this.jobTable.grantReadWriteData(this.apiLambda)
+    this.jobTable.grantReadWriteData(apiLambda)
 
-    this.apiLambdaAlias = new Alias(this, 'ApiLambdaAlias', {
-      aliasName: 'live',
-      version: this.apiLambda.currentVersion,
-    })
+    return apiLambda
   }
 }
