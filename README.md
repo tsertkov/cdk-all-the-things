@@ -121,7 +121,7 @@ Main job of deployer is to run CloudFormation stack updates. It uses CodeBuild t
 13. CloudFormation deploy.
 14. Create/update secrets in SecretsManager.
 
-## Containerized deployer
+## Standalone deployer image
 
 Automated pipelines use deployer container image to execute deployments.
 
