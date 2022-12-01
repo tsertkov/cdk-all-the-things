@@ -2,19 +2,6 @@ import type { SpawnSyncReturns } from 'node:child_process'
 import { jest } from '@jest/globals'
 import { DeployerInput, handler } from '../deployer.js'
 
-function createSpawnMock({ status = 0 } = {}) {
-  return jest.fn((): SpawnSyncReturns<string> => {
-    return {
-      pid: 0,
-      output: ['output'],
-      stdout: 'stdout',
-      stderr: 'stderr',
-      status,
-      signal: null,
-    }
-  })
-}
-
 describe('deployer lambda', () => {
   const spawnMock = createSpawnMock()
   const expectedWriteDir = '/tmp'
@@ -52,9 +39,7 @@ describe('deployer lambda', () => {
 
     describe('When spawned child process fails', () => {
       it('should throw', () => {
-        expect(
-          handler(inputEvent, createSpawnMock({ status: 1 }))
-        ).rejects.toThrow()
+        expect(handler(inputEvent, createSpawnMock(1))).rejects.toThrow()
       })
     })
   })
@@ -65,3 +50,19 @@ describe('deployer lambda', () => {
     })
   })
 })
+
+/**
+ * Create spawn function mock implementation
+ */
+function createSpawnMock(status = 0) {
+  return jest.fn((): SpawnSyncReturns<string> => {
+    return {
+      pid: 0,
+      output: ['output'],
+      stdout: 'stdout',
+      stderr: 'stderr',
+      status,
+      signal: null,
+    }
+  })
+}

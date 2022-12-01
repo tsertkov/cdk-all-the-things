@@ -81,8 +81,9 @@ RUN set -e; \
 	mkdir ${APPROOT}/infra-dist; \
 	find . \( \
 		\( -name '*.js' -o -name 'package*.json' \) \
-		-a -not -path './node_modules/*' \
-		-a -not -path './test/*' \
+		-a -not -path '*/node_modules/*' \
+		-a -not -path '*/test/*' \
+		-a -not -path './lambdas/*/package-lock.json' \
 		\) \
 		-exec cp --parents {} ${APPROOT}/infra-dist \;; \
 	cp -rt ${APPROOT}/infra-dist \
