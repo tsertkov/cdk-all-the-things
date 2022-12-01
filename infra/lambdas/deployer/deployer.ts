@@ -1,43 +1,45 @@
-import { spawnSync } from 'child_process'
+import { runMake, SpawnSyncFunction } from './lib/run-make.js'
 
-interface DeployerInput {
+export interface DeployerInput {
   command: string
   app: string
   regcode: string
   stage: string
 }
 
-export async function handler(event: DeployerInput) {
+export async function handler(event: DeployerInput, spawn?: SpawnSyncFunction) {
   validateDeployerInput(event)
-  await runDeployerCommand(event)
+  return runDeployerCommand(event, spawn)
 }
 
-function validateDeployerInput(input: DeployerInput) {
-  Object.entries(input).forEach(([key, value]) => {
-    if (typeof value !== 'string' || value === '') {
-      throw new Error(`No value passed for '${key}'`)
-    }
-  })
-}
-
-async function runDeployerCommand({
+function validateDeployerInput({
   command,
   app,
   regcode,
   stage,
 }: DeployerInput) {
-  const makeArgs = [
-    command,
-    `app=${app}`,
-    `regcode=${regcode}`,
-    `stage=${stage}`,
-    'write_dir=/tmp',
-  ]
-
-  const { status } = spawnSync('make', makeArgs, {
-    stdio: 'inherit',
-    cwd: '/app',
+  // eslint-disable-next-line @typescript-eslint/no-extra-semi
+  ;[command, app, regcode, stage].forEach((input) => {
+    if (typeof input !== 'string' || input === '') {
+      throw new Error('No all required input parameters were given')
+    }
   })
+}
+
+async function runDeployerCommand(
+  { command, app, regcode, stage }: DeployerInput,
+  spawn?: SpawnSyncFunction
+) {
+  const status = await runMake(
+    [
+      command,
+      `app=${app}`,
+      `regcode=${regcode}`,
+      `stage=${stage}`,
+      'write_dir=/tmp',
+    ],
+    spawn
+  )
 
   if (status !== 0) {
     throw new Error(`Deployer failed with exit code: '${status}'`)

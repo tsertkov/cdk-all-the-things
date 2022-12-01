@@ -1,3 +1,6 @@
 {
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "test": "d=$PWD && cd .. && NODE_NO_WARNINGS=1 NODE_OPTIONS=--experimental-vm-modules npx jest --roots $d"
+  }
 }

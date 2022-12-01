@@ -17,8 +17,6 @@ project_lc ?= $(shell echo $(project) | tr '[:upper:]' '[:lower:]')
 image_name := infra
 image_platform := linux/amd64
 config_file := config.yaml
-ecr_max_image_count ?= $(shell test "$(stage)" = "dev" && echo 5 || echo 10)
-ecr_image_mutability ?= $(shell test "$(stage)" = "dev" && echo MUTABLE || echo IMUTABLE)
 secrets_enabled ?= $(shell yq .secrets.enabled $(config_file))
 secrets_dir := $(write_dir)/secrets
 encrypted_secrets_dir := secrets/encrypted
@@ -30,11 +28,19 @@ public_key ?= $(shell grep '^\# public key: ' $(sops_key_file) | sed 's/^.*: //'
 stacks := *-$(stage)-$(regcode)/$(app)
 infra_cmd := cd infra && SECRETS_DIR_PATH=$(write_dir) INFRA_ROOT=$(CURDIR) INFRA_APP=$(app) npx cdk -o $(write_dir)/infra/cdk.out
 docker_build_args ?= $(shell cat docker-build-args.txt | grep -v '^\(\#.*\)\?$$' | xargs -L1 echo --build-arg | xargs)
-apps ?= $(shell echo deployer-glb && yq '.apps | flatten()' $(config_file) | sed 's/- //' | xargs)
-all_regions ?= $(shell yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' config.yaml | sort | uniq)
-aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output text)
 aws_secrets_cmd := scripts/aws-secrets.sh
 stack_outputs_cmd := scripts/stack-outputs.sh
+apps ?= $(shell echo deployer-glb && yq '.apps | flatten()' $(config_file) | sed 's/- //' | xargs)
+aws_account_id ?= $(shell aws sts get-caller-identity --query Account --output text)
+all_regions ?= $(shell \
+	yq '. | to_entries | (.[].value.[].[].[], .[].value.[].[]) | select(key == "regions") | .[]' \
+		$(config_file) | sort | uniq)
+ecr_max_image_count ?= $(shell \
+	yq '.bootstrap.deployer-ecr.stages.$(stage).ecr_max_image_count // .bootstrap.deployer-ecr.common.ecr_max_image_count' \
+		$(config_file))
+ecr_image_mutability ?= $(shell \
+	yq '.bootstrap.deployer-ecr.stages.$(stage).image_mutability // .bootstrap.deployer-ecr.common.image_mutability' \
+		$(config_file))
 
 # init secrets flags
 ifeq ($(secrets_enabled),true)

@@ -13,9 +13,10 @@ import {
   lambdaProbeDelayMs,
   lambdaVersionsToKeep,
 } from './deployer-version-prepare.test-setup.js'
-import { handler } from './deployer-version-prepare.js'
+// eslint-disable-next-line
+import { handler } from '../deployer-version-prepare.js'
 
-describe('deployer-version-prepare', () => {
+describe('deployer-version-prepare lambda', () => {
   // input constants
   const deployerRepoDomain = 'test-deployer-repo-domain.example.com'
   const deployerRepoName = 'test-deployer-repo-name'

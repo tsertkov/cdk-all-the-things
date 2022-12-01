@@ -4,6 +4,15 @@ secrets:
   enabled: true
   keyRegion: eu-central-1
 
+bootstrap:
+  deployer-ecr:
+    common:
+      ecr_max_image_count: 10
+      image_mutability: IMUTABLE
+    stages:
+      dev:
+        image_mutability: MUTABLE
+
 common:
   removalPolicy: retain
   logRetentionDays: 90
