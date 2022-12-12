@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "aws-cdk": "2.50.0",
-    "aws-cdk-lib": "2.50.0",
+    "aws-cdk-lib": "2.54.0",
     "constructs": "^10.1.151",
     "deepmerge-ts": "^4.2.2",
     "source-map-support": "^0.5.21",
